@@ -59,6 +59,16 @@ jobs:
           # if this repository is unavailable on the runner image.
           sudo apt-get install -y --no-install-recommends \
             lib32ncurses-dev lib32readline-dev lib32z1-dev || true
+          # The legacy clang used for the RenderScript bitcode
+          # (prebuilts/clang/host/linux-x86/clang-3289846) links against ncurses 5,
+          # which Ubuntu 24.04 (noble) no longer ships.
+          if ! sudo apt-get install -y --no-install-recommends \
+                 libncurses5 libtinfo5; then
+            base=http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses
+            curl -fsSLo /tmp/libncurses5.deb "$base/libncurses5_6.2-0ubuntu2_amd64.deb"
+            curl -fsSLo /tmp/libtinfo5.deb "$base/libtinfo5_6.2-0ubuntu2_amd64.deb"
+            sudo dpkg -i /tmp/libtinfo5.deb /tmp/libncurses5.deb
+          fi
           for t in git curl python3 unzip; do command -v "$t" >/dev/null || exit 1; done
 
       - name: Set up swap

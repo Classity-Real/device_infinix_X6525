@@ -47,6 +47,11 @@ copied into `vendor_dlkm/lib/modules` so the stock two-stage module loading
 works unchanged (`/vendor/lib/modules` is a symlink to `/vendor_dlkm/lib/modules`
 created by the build system).
 
+Some host packages are needed beyond the LineageOS dependency list: the
+RenderScript bitcode toolchain (`prebuilts/clang/host/linux-x86/clang-3289846`)
+still links against ncurses 5, which is not packaged on Ubuntu 24.04, so the CI
+workflow installs the Ubuntu 20.04 `libncurses5`/`libtinfo5` debs.
+
 ## Extracting proprietary files
 
 The blobs live in the separate
