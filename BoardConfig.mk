@@ -45,6 +45,10 @@ TARGET_OTA_ASSERT_DEVICE := X6525,Infinix-X6525
 # instead of aborting; the stock copy is defined last and wins, which is what
 # the stock firmware used anyway.
 BUILD_BROKEN_DUP_RULES := true
+# Same reason: the stock libs and HAL binaries are ELF files installed through
+# PRODUCT_COPY_FILES (extract-utils emits copies for the whole stock partition),
+# which the ELF check otherwise rejects in favour of cc_prebuilt_* modules.
+BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
 
 # Bootloader
 TARGET_BOOTLOADER_BOARD_NAME := ums9230

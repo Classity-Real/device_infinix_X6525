@@ -151,4 +151,8 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
   installed by Android.mk based modules (the vendor HIDL/AIDL HAL services such
   as `android.hardware.wifi@1.0-service-lazy`). With this flag kati warns and
   keeps the last definition, i.e. the stock file, instead of aborting
+* `BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true`: `extract-utils` ships
+  the whole stock partition as `PRODUCT_COPY_FILES`, so the libraries and HAL
+  binaries are ELF files copied into `vendor/{bin,lib,lib64}`, which the build
+  system otherwise rejects in favour of `cc_prebuilt_*` modules
 * `--flags 3` on vbmeta, matching the stock "verification disabled" setup
