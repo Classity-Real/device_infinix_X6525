@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2016-2023 Unisoc (Shanghai) Technologies Co., Ltd
+# SPDX-License-Identifier: LicenseRef-Unisoc-General-1.0
+import /vendor/etc/init/hw/init.ram.gms.rc
+import /vendor/etc/init/hw/init.ram.native.rc
+import /vendor/etc/init/hw/init.zramwb.rc
+
+# SPD: add for MemoryFusion2.0 jiajun.ling 20210603 start
+on property:sys.boot_completed=1
+    swapon_all /vendor/etc/memfusion2/fstab.enableswap
+# SPD: add for MemoryFusion2.0 jiajun.ling 20210603 end

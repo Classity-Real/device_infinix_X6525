@@ -1,0 +1,29 @@
+# Radio
+persist.vendor.radio.mdrec.simpin.cache=1
+ro.telephony.se.enable=false
+
+# Miscellaneous
+keyguard.no_require_sim=true
+persist.nhmonitor.enable=on
+persist.sys.bl.clearuserdata=true
+persist.sys.csvt=false
+persist.sys.support.vt=true
+ro.com.android.dataroaming=false
+ro.iorapd.enable=false
+ro.launcher.badge=true
+ro.media.recoderEIS.enabled=true
+ro.media.wfd.rgb.enabled=true
+ro.product.assistanttouch=false
+ro.product.system_ext.tran.device.name.default=Infinix SMART 8
+ro.simlock.onekey.lock=0
+ro.simlock.unlock.autoshow=1
+ro.simlock.unlock.bynv=0
+ro.sprd.displayenhance=true
+ro.sprd.nightdisplay.enhance=true
+ro.sprd.superresolution=0
+ro.sr.displaysize.defaultresolution=1
+ro.sr.displaysize.lowresolution=1
+ro.sys.pwctl.ultrasaving=1
+ro.system.component.label=13-[1m[m[33mtran_sprd_t0_W23.07.1_P1_os13.0_mp.rel_230911[m-250919
+ro.unipnp.switch=true
+
