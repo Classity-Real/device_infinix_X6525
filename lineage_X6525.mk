@@ -13,6 +13,13 @@ $(call inherit-product, device/infinix/X6525/device.mk)
 # Inherit some common Lineage stuff.
 $(call inherit-product, vendor/lineage/config/common_full_phone.mk)
 
+# The stock Unisoc face HAL (vendor.sprd.hardware.biometrics.face-service)
+# already provides android.hardware.biometrics.face IFace/default, so drop the
+# reference example implementation. Besides being redundant, it installs a
+# VINTF fragment to the same path as the stock one
+# (vendor/etc/vintf/manifest/face-default.xml), which breaks the build.
+PRODUCT_PACKAGES := $(filter-out android.hardware.biometrics.face-service.example,$(PRODUCT_PACKAGES))
+
 PRODUCT_DEVICE := X6525
 PRODUCT_NAME := lineage_X6525
 PRODUCT_BRAND := Infinix

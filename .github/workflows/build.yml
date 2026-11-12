@@ -113,15 +113,7 @@ jobs:
           set -o pipefail
           source build/envsetup.sh
           lunch lineage_X6525-userdebug
-          m nothing || true
-          echo "=== diagnostic v2 ==="
-          echo "--- generated Android mk entry ---"
-          sed -n '/face-default/,+22p' out/soong/Android-lineage_X6525.mk | head -40
-          echo "--- LOCAL_VINTF_FRAGMENTS in generated mk ---"
-          grep -n "LOCAL_VINTF_FRAGMENTS" out/soong/Android-lineage_X6525.mk | head -5
-          echo "--- installs mk ---"
-          sed -n '179815,179825p' out/soong/installs-lineage_X6525.mk
-          exit 1
+          mka bacon -j"$(nproc)"
 
       - name: Collect images
         if: always()
