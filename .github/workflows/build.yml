@@ -113,7 +113,18 @@ jobs:
           set -o pipefail
           source build/envsetup.sh
           lunch lineage_X6525-userdebug
-          mka bacon -j"$(nproc)"
+          m nothing || true
+          echo "=== diagnostic: face-default references ==="
+          grep -rln "face-default" out/soong/ 2>/dev/null | head -20
+          echo "--- installs mk around the line ---"
+          grep -rn "face-default" out/soong/installs-lineage_X6525.mk 2>/dev/null | head -10
+          echo "--- ninja ---"
+          grep -rn "vintf/manifest/face-default.xml" out/soong/build.ninja 2>/dev/null | head -6
+          echo "--- make modules declaring vintf fragments ---"
+          grep -rn "LOCAL_VINTF_FRAGMENTS" --include=Android.mk device/infinix/X6525 vendor/infinix/X6525 2>/dev/null | head -20
+          echo "--- product copy files with vintf ---"
+          grep -rn "vintf/manifest" --include=*.mk device/infinix/X6525 vendor/infinix/X6525 2>/dev/null | head -20
+          exit 1
 
       - name: Collect images
         if: always()
