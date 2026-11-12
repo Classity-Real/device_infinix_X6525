@@ -62,11 +62,17 @@ jobs:
           for t in git curl python3 unzip; do command -v "$t" >/dev/null || exit 1; done
 
       - name: Set up swap
+        continue-on-error: true
         run: |
-          sudo fallocate -l 32G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=32768
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          # Namespace runners are containers and may forbid swapon; the build
+          # still has 32 GB of RAM, so this is only a safety net.
+          if sudo fallocate -l 32G /swapfile && sudo chmod 600 /swapfile \
+             && sudo mkswap /swapfile && sudo swapon /swapfile; then
+            echo "swap enabled"
+          else
+            echo "swap not available on this runner, continuing without it"
+            sudo rm -f /swapfile || true
+          fi
           free -h
 
       - name: Configure ccache
