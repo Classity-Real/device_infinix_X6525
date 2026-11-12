@@ -1,39 +1,22 @@
 # Unpinned blobs from X6525-user 13 TP1A.220624.014 665 release-keys
 
 # Audio
-vendor/bin/hw/android.hardware.audio.service
 vendor/etc/init/android.hardware.audio.service.rc:vendor/etc/init/infinix-android.hardware.audio.service.rc
-vendor/lib/hw/android.hardware.audio.effect@7.0-impl.so
-vendor/lib/hw/android.hardware.audio@7.1-impl.so
-vendor/lib/hw/audio.primary.default.so
 vendor/lib/hw/audio.primary.whale.so
-vendor/lib/hw/audio.r_submix.default.so
-vendor/lib/hw/audio.usb.default.so
 vendor/lib/libTransAgc.so
 vendor/lib/libalsa_utils.so
-vendor/lib/libalsautils.so
 vendor/lib/libatci.so
 vendor/lib/libaudiodump.so
 vendor/lib/libaudiomiscctl_whale.so
-vendor/lib/libmediautils_vendor.so
 vendor/lib/libpowerhal_cli.so
 vendor/lib/libtinycompress_unisoc.so
-vendor/lib/libtinyxml.so
 vendor/lib/libunisocpreprocessing.so
 vendor/lib/vendor.unisoc.hardware.power-V1-ndk.so
 vendor/lib/vendor.unisoc.hardware.radio-V1-ndk.so
 vendor/lib/vendor.unisoc.hardware.radio.modem-V1-ndk.so
-vendor/lib64/hw/android.hardware.audio.effect@7.0-impl.so
-vendor/lib64/hw/android.hardware.audio@7.1-impl.so
-vendor/lib64/hw/audio.primary.default.so
-vendor/lib64/hw/audio.r_submix.default.so
-vendor/lib64/hw/audio.usb.default.so
-vendor/lib64/libalsautils.so
 vendor/lib64/libatci.so
-vendor/lib64/libmediautils_vendor.so
 vendor/lib64/libpowerhal_cli.so
 vendor/lib64/libtinycompress_unisoc.so
-vendor/lib64/libtinyxml.so
 vendor/lib64/vendor.unisoc.hardware.power-V1-ndk.so
 vendor/lib64/vendor.unisoc.hardware.radio-V1-ndk.so
 vendor/lib64/vendor.unisoc.hardware.radio.modem-V1-ndk.so
@@ -41,19 +24,13 @@ vendor/lib64/vendor.unisoc.hardware.radio.modem-V1-ndk.so
 # Audio (FX modules)
 vendor/lib/soundfx/libbundlewrapper2.so
 vendor/lib/soundfx/libdtsaudio.so
-vendor/lib/soundfx/libdynproc.so
-vendor/lib/soundfx/libhapticgenerator.so
 vendor/lib/soundfx/libsprdvoiceprocessing.so
 vendor/lib/libdts-eagle-shared.so
 vendor/lib/libsprdaudiohalv7.so
-vendor/lib/libvibrator.so
 vendor/lib64/soundfx/libbundlewrapper2.so
 vendor/lib64/soundfx/libdtsaudio.so
-vendor/lib64/soundfx/libdynproc.so
-vendor/lib64/soundfx/libhapticgenerator.so
 vendor/lib64/libdts-eagle-shared.so
 vendor/lib64/libsprdaudiohalv7.so
-vendor/lib64/libvibrator.so
 
 # Audio configs
 odm/etc/audio/audio_policy_configuration.xml
@@ -91,22 +68,12 @@ vendor/bin/hw/android.hardware.bluetooth@1.1-service.unisoc
 vendor/etc/init/android.hardware.bluetooth@1.1-service.unisoc.rc:vendor/etc/init/infinix-android.hardware.bluetooth@1.1-service.unisoc.rc
 
 # Bluetooth (A2DP)
-vendor/lib/hw/audio.bluetooth.default.so
 vendor/lib/hw/audio.bluetooth.ums9230.so
-vendor/lib/android.hardware.bluetooth.audio-impl.so
-vendor/lib/libbluetooth_audio_session.so
-vendor/lib/libbluetooth_audio_session_aidl.so
 vendor/lib/libsysoffloadstream.so
-vendor/lib64/hw/audio.bluetooth.default.so
 vendor/lib64/hw/audio.bluetooth.ums9230.so
-vendor/lib64/android.hardware.bluetooth.audio-impl.so
-vendor/lib64/libbluetooth_audio_session.so
-vendor/lib64/libbluetooth_audio_session_aidl.so
 vendor/lib64/libsysoffloadstream.so
 
 # Broadcast radio
-vendor/lib/hw/android.hardware.broadcastradio@1.0-impl.so
-vendor/lib64/hw/android.hardware.broadcastradio@1.0-impl.so
 
 # Camera
 odm/lib/hw/camera.ums9230.so
@@ -437,9 +404,7 @@ odm/lib64/libunnengine.so
 odm/lib64/libverify.so
 odm/lib64/libxtm.so
 odm/lib64/libyuv420_scaler.so
-vendor/bin/hw/android.hardware.camera.provider@2.4-service
 vendor/etc/init/android.hardware.camera.provider@2.4-service.rc:vendor/etc/init/infinix-android.hardware.camera.provider@2.4-service.rc
-vendor/lib/camera.device@1.0-impl.so
 vendor/lib/camera.device@3.2-impl-sprd.so
 vendor/lib/camera.device@3.3-impl-sprd.so
 vendor/lib/camera.device@3.4-external-impl-sprd.so
@@ -448,7 +413,6 @@ vendor/lib/camera.device@3.5-external-impl-sprd.so
 vendor/lib/camera.device@3.5-impl-sprd.so
 vendor/lib/camera.device@3.6-external-impl-sprd.so
 vendor/lib/libarcsoft_low_light_shot.so
-vendor/lib64/camera.device@1.0-impl.so
 vendor/lib64/camera.device@3.2-impl-sprd.so
 vendor/lib64/camera.device@3.3-impl-sprd.so
 vendor/lib64/camera.device@3.4-external-impl-sprd.so
@@ -466,13 +430,11 @@ odm/etc/camera/3rdpool/samplenode/tuning/sample_tuning_1.txt
 odm/etc/camera/3rdpool/samplenode/tuning/sample_tuning_2.txt
 
 # CAS
-vendor/bin/hw/android.hardware.cas@1.2-service-lazy
 vendor/etc/init/android.hardware.cas@1.2-service-lazy.rc:vendor/etc/init/infinix-android.hardware.cas@1.2-service-lazy.rc
 vendor/etc/vintf/manifest/android.hardware.cas@1.2-service-lazy.xml:vendor/etc/vintf/manifest/infinix-android.hardware.cas@1.2-service-lazy.xml
 
 # Display
 vendor/bin/hw/android.hardware.graphics.allocator@4.0-service
-vendor/bin/hw/android.hardware.graphics.composer@2.4-service
 vendor/etc/init/android.hardware.graphics.allocator@4.0-service.rc:vendor/etc/init/infinix-android.hardware.graphics.allocator@4.0-service.rc
 vendor/etc/init/android.hardware.graphics.composer@2.4-service.rc:vendor/etc/init/infinix-android.hardware.graphics.composer@2.4-service.rc
 vendor/lib/egl/libGLES_mali.so
@@ -486,13 +448,11 @@ vendor/lib64/egl/libGLES_mali.so
 vendor/lib64/hw/gralloc.default.so
 vendor/lib64/hw/hwcomposer.unisoc.so
 vendor/lib64/hw/vulkan.ums9230.so
-vendor/lib64/libhwc2onfbadapter.so
 vendor/lib64/libmediahdrtosdrtransform.so
 vendor/lib64/libmemion.so
 vendor/lib64/vendor.sprd.hardware.enhance-V1-ndk.so
 
 # DRM
-vendor/bin/hw/android.hardware.drm-service-lazy.clearkey
 vendor/bin/hw/android.hardware.drm-service-lazy.widevine
 vendor/bin/hw/android.hardware.drm-service.widevine
 vendor/etc/init/android.hardware.drm-service-lazy.clearkey.rc:vendor/etc/init/infinix-android.hardware.drm-service-lazy.clearkey.rc
@@ -500,32 +460,24 @@ vendor/etc/init/android.hardware.drm-service-lazy.widevine.rc:vendor/etc/init/in
 vendor/etc/init/android.hardware.drm-service.widevine.rc:vendor/etc/init/infinix-android.hardware.drm-service.widevine.rc
 vendor/etc/vintf/manifest/android.hardware.drm-service.clearkey.xml:vendor/etc/vintf/manifest/infinix-android.hardware.drm-service.clearkey.xml
 vendor/etc/vintf/manifest/manifest_android.hardware.drm-service.widevine.xml:vendor/etc/vintf/manifest/infinix-manifest_android.hardware.drm-service.widevine.xml
-vendor/lib/mediacas/libclearkeycasplugin.so
-vendor/lib/mediadrm/libdrmclearkeyplugin.so
 vendor/lib/libwvaidl.so
-vendor/lib64/mediacas/libclearkeycasplugin.so
-vendor/lib64/mediadrm/libdrmclearkeyplugin.so
 
 # Fingerprint
-vendor/bin/hw/android.hardware.biometrics.fingerprint@2.1-service
 vendor/etc/init/android.hardware.biometrics.fingerprint@2.1-service.rc:vendor/etc/init/infinix-android.hardware.biometrics.fingerprint@2.1-service.rc
 vendor/etc/vintf/manifest/android.hardware.biometrics.fingerprint@2.1-service.xml:vendor/etc/vintf/manifest/infinix-android.hardware.biometrics.fingerprint@2.1-service.xml
 vendor/lib/hw/fingerprint.silead.default.so
 vendor/lib/libgf_ca.so
 vendor/lib/libgf_hal.so
 vendor/lib/libsl_fp_impl.so
-vendor/lib/libtrusty.so
 vendor/lib64/hw/fingerprint.silead.default.so
 vendor/lib64/hw/gf_fingerprint.default.so
 vendor/lib64/libgf_ca.so
 vendor/lib64/libgf_hal.so
 vendor/lib64/libgoodixhwfingerprint.so
 vendor/lib64/libsl_fp_impl.so
-vendor/lib64/libtrusty.so
 vendor/lib64/libvendor.goodix.hardware.biometrics.fingerprint@2.1.so
 
 # Gatekeeper
-vendor/bin/hw/android.hardware.gatekeeper@1.0-service.trusty
 vendor/etc/init/android.hardware.gatekeeper@1.0-service.trusty.rc:vendor/etc/init/infinix-android.hardware.gatekeeper@1.0-service.trusty.rc
 vendor/etc/vintf/manifest/android.hardware.gatekeeper@1.0-service.trusty.xml:vendor/etc/vintf/manifest/infinix-android.hardware.gatekeeper@1.0-service.trusty.xml
 
@@ -536,32 +488,21 @@ vendor/lib64/hw/android.hardware.gnss@2.1-impl.so
 vendor/lib64/hw/gps.default.so
 
 # Health
-vendor/bin/hw/android.hardware.health-service.example
 vendor/etc/init/android.hardware.health-service.example.rc:vendor/etc/init/infinix-android.hardware.health-service.example.rc
 vendor/etc/vintf/manifest/android.hardware.health-service.example.xml:vendor/etc/vintf/manifest/infinix-android.hardware.health-service.example.xml
 
 # Local time
-vendor/lib/hw/local_time.default.so
-vendor/lib64/hw/local_time.default.so
 
 # Media
 vendor/bin/hw/android.hardware.media.c2@1.1-unisoc-service
-vendor/bin/hw/android.hardware.media.omx@1.0-service
 vendor/etc/init/android.hardware.media.c2@1.1-unisoc-service.rc:vendor/etc/init/infinix-android.hardware.media.c2@1.1-unisoc-service.rc
 vendor/etc/init/android.hardware.media.omx@1.0-service.rc:vendor/etc/init/infinix-android.hardware.media.omx@1.0-service.rc
-vendor/lib/libcodec2_hidl@1.1.so
-vendor/lib/libcodec2_hidl_plugin.so
 vendor/lib/libcodec2_unisoc_common.so
 vendor/lib/libcodec2_unisoc_store.so
-vendor/lib/libsfplugin_ccodec_utils.so
-vendor/lib/libstagefright_bufferpool@2.0.1.so
 vendor/lib/libstagefright_soft_mjpgdec.so
-vendor/lib/libstagefright_softomx_plugin.so
 vendor/lib/libstagefrighthw.so
 vendor/lib64/libcodec2_unisoc_common.so
 vendor/lib64/libcodec2_unisoc_store.so
-vendor/lib64/libsfplugin_ccodec_utils.so
-vendor/lib64/libstagefright_bufferpool@2.0.1.so
 vendor/lib64/libstagefrighthw.so
 
 # Media configs
@@ -578,9 +519,6 @@ vendor/bin/hw/android.hardware.neuralnetworks@1.3-service-armnn-gpu
 vendor/etc/init/android.hardware.neuralnetworks@1.3-service-armnn-gpu.rc:vendor/etc/init/infinix-android.hardware.neuralnetworks@1.3-service-armnn-gpu.rc
 
 # Power
-vendor/bin/hw/android.hardware.power.stats-service.example
-vendor/lib/hw/power.default.so
-vendor/lib64/hw/power.default.so
 
 # Radio
 system_ext/etc/init/dataLogDaemon.rc:system_ext/etc/init/infinix-dataLogDaemon.rc
@@ -606,19 +544,13 @@ vendor/lib64/vendor.unisoc.hardware.radio.voice-V1-ndk.so
 system_ext/priv-app/ims/ims.apk
 
 # RenderScript
-vendor/lib/hw/android.hardware.renderscript@1.0-impl.so
-vendor/lib64/hw/android.hardware.renderscript@1.0-impl.so
 
 # Security
 vendor/bin/hw/android.hardware.security.keymint@2.0-unisoc.service.trusty
 vendor/etc/init/android.hardware.security.keymint@2.0-unisoc.service.trusty.rc:vendor/etc/init/infinix-android.hardware.security.keymint@2.0-unisoc.service.trusty.rc
 vendor/etc/vintf/manifest/android.hardware.security.keymint@2.0-unisoc.service.trusty.xml:vendor/etc/vintf/manifest/infinix-android.hardware.security.keymint@2.0-unisoc.service.trusty.xml
-vendor/lib64/lib_android_keymaster_keymint_utils.so
-vendor/lib64/libcppbor_external.so
-vendor/lib64/libkeymint.so
 
 # Sensors
-vendor/bin/hw/android.hardware.sensors-service.multihal
 vendor/etc/init/android.hardware.sensors-service-multihal.rc:vendor/etc/init/infinix-android.hardware.sensors-service-multihal.rc
 vendor/etc/vintf/manifest/android.hardware.sensors-multihal.xml:vendor/etc/vintf/manifest/infinix-android.hardware.sensors-multihal.xml
 vendor/lib/hw/sensors.unisoc.so
@@ -637,17 +569,12 @@ vendor/etc/sensors/hals.conf
 system_ext/app/SoterService/SoterService.apk
 
 # Thermal
-vendor/lib/hw/thermal.default.so
-vendor/lib64/hw/thermal.default.so
 
 # USB
-vendor/bin/hw/android.hardware.usb-service.example
 vendor/etc/init/android.hardware.usb-service.example.rc:vendor/etc/init/infinix-android.hardware.usb-service.example.rc
 vendor/etc/vintf/manifest/android.hardware.usb-service.example.xml:vendor/etc/vintf/manifest/infinix-android.hardware.usb-service.example.xml
 
 # Vibrator
-vendor/lib/hw/vibrator.default.so
-vendor/lib64/hw/vibrator.default.so
 
 # Wi-Fi
 vendor/bin/hw/android.hardware.wifi@1.0-service-lazy
@@ -659,8 +586,6 @@ vendor/etc/vintf/manifest/android.hardware.wifi.hostapd.xml:vendor/etc/vintf/man
 vendor/etc/vintf/manifest/android.hardware.wifi.supplicant.xml:vendor/etc/vintf/manifest/infinix-android.hardware.wifi.supplicant.xml
 vendor/etc/vintf/manifest/android.hardware.wifi@1.0-service.xml:vendor/etc/vintf/manifest/infinix-android.hardware.wifi@1.0-service.xml
 vendor/lib/libwifi-hal.so
-vendor/lib64/libkeystore-engine-wifi-hidl.so
-vendor/lib64/libkeystore-wifi-hidl.so
 vendor/lib64/libwifi-hal.so
 
 # Wi-Fi configs
@@ -1199,8 +1124,6 @@ vendor/bin/aiactiver_testbench
 vendor/bin/antiflashing
 vendor/bin/audiodumpclient
 vendor/bin/bootcheckbox
-vendor/bin/boringssl_self_test32
-vendor/bin/boringssl_self_test64
 vendor/bin/btools
 vendor/bin/charge
 vendor/bin/charged
@@ -1210,7 +1133,6 @@ vendor/bin/cp_diskserver
 vendor/bin/cp_dump_dbg
 vendor/bin/cplogctl
 vendor/bin/dcxsrv
-vendor/bin/dumpsys
 vendor/bin/engpc
 vendor/bin/engpcctl
 vendor/bin/enhance_test
@@ -1223,7 +1145,6 @@ vendor/bin/modem_ctrl_dbg
 vendor/bin/nvmerge
 vendor/bin/phasecheckserver
 vendor/bin/refnotify
-vendor/bin/rkp_factory_extraction_tool
 vendor/bin/rpmbserver
 vendor/bin/slogmodem_vendor
 vendor/bin/sprdstorageproxyd
@@ -1804,7 +1725,6 @@ vendor/etc/log_settings_autotest.xml
 vendor/etc/log_settings_cali.xml
 vendor/etc/log_settings_factory.xml
 vendor/etc/log_settings_lite.xml
-vendor/etc/mkshrc
 vendor/etc/modem_cp_info.xml
 vendor/etc/modem_sp_info.xml
 vendor/etc/numeric_operator.xml
@@ -4229,7 +4149,6 @@ vendor/firmware/regulatory.db
 vendor/firmware/regulatory.db.p7s
 vendor/firmware/silead.elf
 vendor/firmware/soter.elf
-vendor/lib/hw/bootctrl.default.so
 vendor/lib/hw/dpu.unisoc.so
 vendor/lib/hw/enhance.unisoc.so
 vendor/lib/hw/face.default.so
@@ -4298,22 +4217,16 @@ vendor/lib/arm.graphics-V1-ndk_platform.so
 vendor/lib/arm.graphics-V2-ndk.so
 vendor/lib/arm.graphics-V2-ndk_platform.so
 vendor/lib/arm.graphics-V3-ndk.so
-vendor/lib/audioclient-types-aidl-cpp.so
-vendor/lib/av-types-aidl-cpp.so
-vendor/lib/framework-permission-aidl-cpp.so
 vendor/lib/libAlgoServiceAdapter.so
 vendor/lib/libGLES_mali_cl.so
 vendor/lib/libWhite_point_shift.so
 vendor/lib/lib_crypto.so
 vendor/lib/lib_hdr10plus_tm.so
-vendor/lib/libaudioclient_aidl_conversion.so
-vendor/lib/libaudiofoundation.so
 vendor/lib/libavcodec-58.so
 vendor/lib/libavutil-56.so
 vendor/lib/libbqbbt.so
 vendor/lib/libbt-sprd_suite.so
 vendor/lib/libbt-ssp_bt.so
-vendor/lib/libcamera2ndk_vendor.so
 vendor/lib/libcodec2_unisoc_av1dec.so
 vendor/lib/libcodec2_unisoc_avcdec.so
 vendor/lib/libcodec2_unisoc_avcenc.so
@@ -4377,10 +4290,7 @@ vendor/lib/libril-private.so
 vendor/lib/librpmbclient.so
 vendor/lib/libsecrpmbdata.so
 vendor/lib/libsecrpmbdata_platform.so
-vendor/lib/libsensorndkbridge.so
 vendor/lib/libsensornpi.so
-vendor/lib/libshmemcompat.so
-vendor/lib/libshmemutil.so
 vendor/lib/libsoter_trusty.so
 vendor/lib/libsprd_omx_core.so
 vendor/lib/libsprdaudiohal@7.0.so
@@ -4397,12 +4307,10 @@ vendor/lib/libtrustyHalHelper.so
 vendor/lib/libturboctl_vendor.so
 vendor/lib/libvideo_share_memory.so
 vendor/lib/libvirtrpmb.so
-vendor/lib/libvpx.so
 vendor/lib/libvsp_ca.so
 vendor/lib/libwcn-vendor.so
 vendor/lib/libwpa_client.so
 vendor/lib/oemlock_ca.so
-vendor/lib/shared-file-region-aidl-cpp.so
 vendor/lib/vendor.sprd.hardware.algoservice@1.0.so
 vendor/lib/vendor.sprd.hardware.boot@1.2.so
 vendor/lib/vendor.sprd.hardware.connmgr@1.0.so
@@ -4413,7 +4321,6 @@ vendor/lib/vendor.sprd.hardware.thermal@2.0.so
 vendor/lib/vendor.sprd.hardware.trusty-V1-ndk.so
 vendor/lib/vendor.sprd.hardware.trusty@1.0.so
 vendor/lib/vendor.sprd.hardware.wcn@1.0.so
-vendor/lib64/hw/bootctrl.default.so
 vendor/lib64/hw/dpu.unisoc.so
 vendor/lib64/hw/enhance.unisoc.so
 vendor/lib64/hw/face.default.so
@@ -4441,10 +4348,7 @@ vendor/lib64/arm.graphics-V1-ndk_platform.so
 vendor/lib64/arm.graphics-V2-ndk.so
 vendor/lib64/arm.graphics-V2-ndk_platform.so
 vendor/lib64/arm.graphics-V3-ndk.so
-vendor/lib64/audioclient-types-aidl-cpp.so
-vendor/lib64/av-types-aidl-cpp.so
 vendor/lib64/cplog_common.so
-vendor/lib64/framework-permission-aidl-cpp.so
 vendor/lib64/libAlgoServiceAdapter.so
 vendor/lib64/libGLES_mali_cl.so
 vendor/lib64/libWhite_point_shift.so
@@ -4452,17 +4356,12 @@ vendor/lib64/lib_crypto.so
 vendor/lib64/lib_hdr10plus_tm.so
 vendor/lib64/libaiactiver.so
 vendor/lib64/libaiactiver_core.so
-vendor/lib64/libaudioclient_aidl_conversion.so
-vendor/lib64/libaudiofoundation.so
 vendor/lib64/libavcodec-58.so
 vendor/lib64/libavutil-56.so
-vendor/lib64/libbinderdebug.so
 vendor/lib64/libbt-sprd_suite.so
 vendor/lib64/libbt-ssp_bt.so
-vendor/lib64/libcamera2ndk_vendor.so
 vendor/lib64/libcodec2_unisoc_deintl.so
 vendor/lib64/libcodec2_unisoc_imaadpcm.so
-vendor/lib64/libcppcose_rkp.so
 vendor/lib64/libdav1d.so
 vendor/lib64/libdtsdsec.so
 vendor/lib64/libefuse.so
@@ -4513,11 +4412,7 @@ vendor/lib64/libril-private.so
 vendor/lib64/librpmbclient.so
 vendor/lib64/libsecrpmbdata.so
 vendor/lib64/libsecrpmbdata_platform.so
-vendor/lib64/libsensorndkbridge.so
 vendor/lib64/libsensornpi.so
-vendor/lib64/libshmemcompat.so
-vendor/lib64/libshmemutil.so
-vendor/lib64/libsoft_attestation_cert.so
 vendor/lib64/libsoter_trusty.so
 vendor/lib64/libsprd_omx_core.so
 vendor/lib64/libsprdaudiohal@7.0.so
@@ -4541,7 +4436,6 @@ vendor/lib64/libwcn-vendor.so
 vendor/lib64/libwpa_client.so
 vendor/lib64/oemlock_ca.so
 vendor/lib64/power.sprd.so
-vendor/lib64/shared-file-region-aidl-cpp.so
 vendor/lib64/vendor.silead.hardware.fingerprintext@1.0-adapter-helper.so
 vendor/lib64/vendor.silead.hardware.fingerprintext@1.0.so
 vendor/lib64/vendor.sprd.hardware.algoservice@1.0.so

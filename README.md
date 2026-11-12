@@ -126,11 +126,20 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
 * EROFS images for all read-only partitions, matching the stock layout
 * all stock init scripts and VINTF fragments (`vendor`, `odm` and `system_ext`
   `etc/init` and `etc/vintf/manifest`) are extracted with an `infinix-` prefix
-  (a `src:dst` rename in `proprietary-files.txt`; the face fragment becomes
-  `vendor.sprd.hardware.biometrics.face.xml`). Soong generates an install rule
-  for the VINTF fragment and init script of every module that declares one, even
-  when the module is not in `PRODUCT_PACKAGES`, so identically named stock files
-  (e.g. `face-default.xml`, `face-default.rc`,
+  (a `src:dst` rename in `proprietary-files.txt`); the stock face fragment is
+  extracted as `vendor.sprd.hardware.biometrics.face.xml` instead. Soong
+  generates an install rule for the VINTF fragment and init script of every
+  module that declares one, even when the module is not in `PRODUCT_PACKAGES`,
+  so identically named stock files (e.g. `face-default.xml`, `face-default.rc`,
   `android.hardware.wifi@1.0-service.xml`, `power.stats-default.xml`) would
   otherwise create duplicate make targets and abort the build
+* stock copies of files that AOSP builds and installs into the vendor image are
+  not shipped at all: the boringssl self tests, `dumpsys`, `mkshrc`, the
+  `rkp_factory_extraction_tool`, the AOSP HAL services (`android.hardware.
+  audio.service`, `camera.provider@2.4-service`, `graphics.composer@2.4-service`,
+  `sensors-service.multihal`, the health/usb/power.stats examples, ...) and their
+  impl/helper libraries (`audio.primary.default.so`, `libvpx.so`,
+  `libstagefright_*`, ...). Soong installs those exact paths, so the stock
+  `PRODUCT_COPY_FILES` rules collided with the source-built install rules. Only
+  the Unisoc-specific blobs are kept
 * `--flags 3` on vbmeta, matching the stock "verification disabled" setup
