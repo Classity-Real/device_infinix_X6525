@@ -155,4 +155,7 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
   the whole stock partition as `PRODUCT_COPY_FILES`, so the libraries and HAL
   binaries are ELF files copied into `vendor/{bin,lib,lib64}`, which the build
   system otherwise rejects in favour of `cc_prebuilt_*` modules
+* the stock `product.prop` `ro.config.ringtone`, `ro.config.notification_sound`
+  and `ro.config.alarm_alert` assignments were dropped: LineageOS sets the
+  same keys in its common config and the build rejects duplicate sysprops
 * `--flags 3` on vbmeta, matching the stock "verification disabled" setup
