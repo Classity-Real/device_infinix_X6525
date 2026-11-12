@@ -113,7 +113,54 @@ jobs:
           set -o pipefail
           source build/envsetup.sh
           lunch lineage_X6525-userdebug
-          mka bacon -j"$(nproc)"
+          m nothing || true
+          python3 - <<'PY'
+          import os, re
+
+          OUT = 'out/target/product/X6525/'
+          parts = {
+              '$(TARGET_COPY_OUT_VENDOR)': 'vendor',
+              '$(TARGET_COPY_OUT_PRODUCT)': 'product',
+              '$(TARGET_COPY_OUT_SYSTEM_EXT)': 'system_ext',
+              '$(TARGET_COPY_OUT_ODM)': 'odm',
+          }
+
+          copy = {}
+          for line in open('vendor/infinix/X6525/X6525-vendor.mk', errors='ignore'):
+              line = line.strip().rstrip('\\').strip()
+              if ':' not in line or line.startswith('#'):
+                  continue
+              src, dest = line.split(':', 1)
+              if 'proprietary' not in src:
+                  continue
+              for var, out in parts.items():
+                  if dest.startswith(var + '/'):
+                      copy[OUT + out + dest[len(var):]] = src
+                      break
+
+          soong = {}
+          for line in open('out/soong/installs-lineage_X6525.mk', errors='ignore'):
+              line = line.rstrip('\n')
+              if line.startswith('#') or ':' not in line:
+                  continue
+              tgt, _, pre = line.partition(':')
+              tgt = tgt.strip()
+              if not tgt.startswith(OUT):
+                  continue
+              pre = pre.strip()
+              if 'vendor/infinix/X6525' in pre:
+                  continue
+              if 'out/soong/.intermediates/' not in pre and 'out/host/' not in pre:
+                  continue
+              soong.setdefault(tgt, pre.split()[0])
+
+          clash = sorted(set(copy) & set(soong))
+          print(f'{len(copy)} stock copy destinations, {len(soong)} source-built install targets, {len(clash)} clashes')
+          print('--- CLASHES (stock PRODUCT_COPY_FILES vs source-built file) ---')
+          for t in clash:
+              print(t.replace(OUT, ''), '<-', soong[t])
+          PY
+          exit 1
 
       - name: Collect images
         if: always()
