@@ -37,6 +37,15 @@ TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a55
 # Assert
 TARGET_OTA_ASSERT_DEVICE := X6525,Infinix-X6525
 
+# Build
+# The vendor repo ships the complete stock vendor image as PRODUCT_COPY_FILES,
+# and a number of Soong and Android.mk modules (vendor HIDL/AIDL HAL services,
+# AOSP-provided libraries) install the very same paths. So the stock rules and
+# the source-built install rules define the same make targets. Let kati warn
+# instead of aborting; the stock copy is defined last and wins, which is what
+# the stock firmware used anyway.
+BUILD_BROKEN_DUP_RULES := true
+
 # Bootloader
 TARGET_BOOTLOADER_BOARD_NAME := ums9230
 TARGET_NO_BOOTLOADER := true

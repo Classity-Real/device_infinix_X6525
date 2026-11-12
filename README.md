@@ -142,4 +142,8 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
   `libstagefright_*`, ...). Soong installs those exact paths, so the stock
   `PRODUCT_COPY_FILES` rules collided with the source-built install rules. Only
   the Unisoc-specific blobs are kept
+* `BUILD_BROKEN_DUP_RULES := true`: the stock vendor image also duplicates paths
+  installed by Android.mk based modules (the vendor HIDL/AIDL HAL services such
+  as `android.hardware.wifi@1.0-service-lazy`). With this flag kati warns and
+  keeps the last definition, i.e. the stock file, instead of aborting
 * `--flags 3` on vbmeta, matching the stock "verification disabled" setup
