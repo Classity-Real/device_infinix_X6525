@@ -124,13 +124,13 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
 * restored the stock vendor ramdisk kernel modules and `modules.load[.recovery]`
 * pruned the `rootdir` init files belonging to other Infinix/Unisoc models
 * EROFS images for all read-only partitions, matching the stock layout
-* stock files in `vendor/etc/init` and `vendor/etc/vintf/manifest` that share a
-  name with an AOSP HAL support file are extracted with an `infinix-` prefix (a
-  `src:dst` rename in `proprietary-files.txt`; the face fragment becomes
+* all stock init scripts and VINTF fragments (`vendor`, `odm` and `system_ext`
+  `etc/init` and `etc/vintf/manifest`) are extracted with an `infinix-` prefix
+  (a `src:dst` rename in `proprietary-files.txt`; the face fragment becomes
   `vendor.sprd.hardware.biometrics.face.xml`). Soong generates an install rule
   for the VINTF fragment and init script of every module that declares one, even
   when the module is not in `PRODUCT_PACKAGES`, so identically named stock files
   (e.g. `face-default.xml`, `face-default.rc`,
-  `android.hardware.wifi@1.0-service.xml`) would otherwise create duplicate
-  make targets and abort the build
+  `android.hardware.wifi@1.0-service.xml`, `power.stats-default.xml`) would
+  otherwise create duplicate make targets and abort the build
 * `--flags 3` on vbmeta, matching the stock "verification disabled" setup
