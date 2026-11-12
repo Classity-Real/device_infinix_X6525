@@ -1771,7 +1771,7 @@ vendor/etc/vintf/manifest/bluetooth_audio.xml
 vendor/etc/vintf/manifest/combinedservice.xml
 vendor/etc/vintf/manifest/cplog_svc-default.xml
 vendor/etc/vintf/manifest/enhance-default.xml
-vendor/etc/vintf/manifest/face-default.xml
+vendor/etc/vintf/manifest/face-default.xml:vendor/etc/vintf/manifest/vendor.sprd.hardware.biometrics.face.xml
 vendor/etc/vintf/manifest/manifest_dualsim.xml
 vendor/etc/vintf/manifest/manifest_media_c2_V1_1_unisoc.xml
 vendor/etc/vintf/manifest/manifest_tneengine.xml

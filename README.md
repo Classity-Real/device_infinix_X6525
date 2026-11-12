@@ -124,4 +124,9 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
 * restored the stock vendor ramdisk kernel modules and `modules.load[.recovery]`
 * pruned the `rootdir` init files belonging to other Infinix/Unisoc models
 * EROFS images for all read-only partitions, matching the stock layout
+* the stock face VINTF fragment is extracted as
+  `vendor.sprd.hardware.biometrics.face.xml` (a `src:dst` rename in
+  `proprietary-files.txt`) because AOSP's
+  `android.hardware.biometrics.face-service.example` installs a fragment with
+  the original `face-default.xml` name; duplicate make targets abort the build
 * `--flags 3` on vbmeta, matching the stock "verification disabled" setup
