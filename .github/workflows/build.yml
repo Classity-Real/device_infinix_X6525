@@ -113,7 +113,15 @@ jobs:
           set -o pipefail
           source build/envsetup.sh
           lunch lineage_X6525-userdebug
-          mka bacon -j"$(nproc)"
+          echo "=== who references the example face service ==="
+          grep -rn "face-service.example" --include=*.mk --include=*.bp --include=*.txt . 2>/dev/null | grep -v "^\./out/" | head -30
+          echo "=== PRODUCT_PACKAGES face entries ==="
+          ./build/soong/soong_ui.bash --dumpvar-mode PRODUCT_PACKAGES 2>/dev/null | tr ' ' '\n' | grep -i face | head -20
+          echo "=== install rules for face-service binary ==="
+          grep -n "biometrics.face-service" out/soong/installs-lineage_X6525.mk 2>/dev/null | head -10
+          echo "=== generated make block for the example module ==="
+          grep -n "android.hardware.biometrics.face-service.example" out/soong/Android-lineage_X6525.mk 2>/dev/null | head -10
+          exit 1
 
       - name: Collect images
         if: always()
