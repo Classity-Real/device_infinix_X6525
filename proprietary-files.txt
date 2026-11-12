@@ -2,7 +2,7 @@
 
 # Audio
 vendor/bin/hw/android.hardware.audio.service
-vendor/etc/init/android.hardware.audio.service.rc
+vendor/etc/init/android.hardware.audio.service.rc:vendor/etc/init/infinix-android.hardware.audio.service.rc
 vendor/lib/hw/android.hardware.audio.effect@7.0-impl.so
 vendor/lib/hw/android.hardware.audio@7.1-impl.so
 vendor/lib/hw/audio.primary.default.so
@@ -438,7 +438,7 @@ odm/lib64/libverify.so
 odm/lib64/libxtm.so
 odm/lib64/libyuv420_scaler.so
 vendor/bin/hw/android.hardware.camera.provider@2.4-service
-vendor/etc/init/android.hardware.camera.provider@2.4-service.rc
+vendor/etc/init/android.hardware.camera.provider@2.4-service.rc:vendor/etc/init/infinix-android.hardware.camera.provider@2.4-service.rc
 vendor/lib/camera.device@1.0-impl.so
 vendor/lib/camera.device@3.2-impl-sprd.so
 vendor/lib/camera.device@3.3-impl-sprd.so
@@ -467,14 +467,14 @@ odm/etc/camera/3rdpool/samplenode/tuning/sample_tuning_2.txt
 
 # CAS
 vendor/bin/hw/android.hardware.cas@1.2-service-lazy
-vendor/etc/init/android.hardware.cas@1.2-service-lazy.rc
-vendor/etc/vintf/manifest/android.hardware.cas@1.2-service-lazy.xml
+vendor/etc/init/android.hardware.cas@1.2-service-lazy.rc:vendor/etc/init/infinix-android.hardware.cas@1.2-service-lazy.rc
+vendor/etc/vintf/manifest/android.hardware.cas@1.2-service-lazy.xml:vendor/etc/vintf/manifest/infinix-android.hardware.cas@1.2-service-lazy.xml
 
 # Display
 vendor/bin/hw/android.hardware.graphics.allocator@4.0-service
 vendor/bin/hw/android.hardware.graphics.composer@2.4-service
-vendor/etc/init/android.hardware.graphics.allocator@4.0-service.rc
-vendor/etc/init/android.hardware.graphics.composer@2.4-service.rc
+vendor/etc/init/android.hardware.graphics.allocator@4.0-service.rc:vendor/etc/init/infinix-android.hardware.graphics.allocator@4.0-service.rc
+vendor/etc/init/android.hardware.graphics.composer@2.4-service.rc:vendor/etc/init/infinix-android.hardware.graphics.composer@2.4-service.rc
 vendor/lib/egl/libGLES_mali.so
 vendor/lib/hw/gralloc.default.so
 vendor/lib/hw/hwcomposer.unisoc.so
@@ -495,10 +495,10 @@ vendor/lib64/vendor.sprd.hardware.enhance-V1-ndk.so
 vendor/bin/hw/android.hardware.drm-service-lazy.clearkey
 vendor/bin/hw/android.hardware.drm-service-lazy.widevine
 vendor/bin/hw/android.hardware.drm-service.widevine
-vendor/etc/init/android.hardware.drm-service-lazy.clearkey.rc
+vendor/etc/init/android.hardware.drm-service-lazy.clearkey.rc:vendor/etc/init/infinix-android.hardware.drm-service-lazy.clearkey.rc
 vendor/etc/init/android.hardware.drm-service-lazy.widevine.rc
 vendor/etc/init/android.hardware.drm-service.widevine.rc
-vendor/etc/vintf/manifest/android.hardware.drm-service.clearkey.xml
+vendor/etc/vintf/manifest/android.hardware.drm-service.clearkey.xml:vendor/etc/vintf/manifest/infinix-android.hardware.drm-service.clearkey.xml
 vendor/etc/vintf/manifest/manifest_android.hardware.drm-service.widevine.xml
 vendor/lib/mediacas/libclearkeycasplugin.so
 vendor/lib/mediadrm/libdrmclearkeyplugin.so
@@ -508,8 +508,8 @@ vendor/lib64/mediadrm/libdrmclearkeyplugin.so
 
 # Fingerprint
 vendor/bin/hw/android.hardware.biometrics.fingerprint@2.1-service
-vendor/etc/init/android.hardware.biometrics.fingerprint@2.1-service.rc
-vendor/etc/vintf/manifest/android.hardware.biometrics.fingerprint@2.1-service.xml
+vendor/etc/init/android.hardware.biometrics.fingerprint@2.1-service.rc:vendor/etc/init/infinix-android.hardware.biometrics.fingerprint@2.1-service.rc
+vendor/etc/vintf/manifest/android.hardware.biometrics.fingerprint@2.1-service.xml:vendor/etc/vintf/manifest/infinix-android.hardware.biometrics.fingerprint@2.1-service.xml
 vendor/lib/hw/fingerprint.silead.default.so
 vendor/lib/libgf_ca.so
 vendor/lib/libgf_hal.so
@@ -526,8 +526,8 @@ vendor/lib64/libvendor.goodix.hardware.biometrics.fingerprint@2.1.so
 
 # Gatekeeper
 vendor/bin/hw/android.hardware.gatekeeper@1.0-service.trusty
-vendor/etc/init/android.hardware.gatekeeper@1.0-service.trusty.rc
-vendor/etc/vintf/manifest/android.hardware.gatekeeper@1.0-service.trusty.xml
+vendor/etc/init/android.hardware.gatekeeper@1.0-service.trusty.rc:vendor/etc/init/infinix-android.hardware.gatekeeper@1.0-service.trusty.rc
+vendor/etc/vintf/manifest/android.hardware.gatekeeper@1.0-service.trusty.xml:vendor/etc/vintf/manifest/infinix-android.hardware.gatekeeper@1.0-service.trusty.xml
 
 # GNSS
 vendor/lib/hw/android.hardware.gnss@2.1-impl.so
@@ -537,8 +537,8 @@ vendor/lib64/hw/gps.default.so
 
 # Health
 vendor/bin/hw/android.hardware.health-service.example
-vendor/etc/init/android.hardware.health-service.example.rc
-vendor/etc/vintf/manifest/android.hardware.health-service.example.xml
+vendor/etc/init/android.hardware.health-service.example.rc:vendor/etc/init/infinix-android.hardware.health-service.example.rc
+vendor/etc/vintf/manifest/android.hardware.health-service.example.xml:vendor/etc/vintf/manifest/infinix-android.hardware.health-service.example.xml
 
 # Local time
 vendor/lib/hw/local_time.default.so
@@ -548,7 +548,7 @@ vendor/lib64/hw/local_time.default.so
 vendor/bin/hw/android.hardware.media.c2@1.1-unisoc-service
 vendor/bin/hw/android.hardware.media.omx@1.0-service
 vendor/etc/init/android.hardware.media.c2@1.1-unisoc-service.rc
-vendor/etc/init/android.hardware.media.omx@1.0-service.rc
+vendor/etc/init/android.hardware.media.omx@1.0-service.rc:vendor/etc/init/infinix-android.hardware.media.omx@1.0-service.rc
 vendor/lib/libcodec2_hidl@1.1.so
 vendor/lib/libcodec2_hidl_plugin.so
 vendor/lib/libcodec2_unisoc_common.so
@@ -619,8 +619,8 @@ vendor/lib64/libkeymint.so
 
 # Sensors
 vendor/bin/hw/android.hardware.sensors-service.multihal
-vendor/etc/init/android.hardware.sensors-service-multihal.rc
-vendor/etc/vintf/manifest/android.hardware.sensors-multihal.xml
+vendor/etc/init/android.hardware.sensors-service-multihal.rc:vendor/etc/init/infinix-android.hardware.sensors-service-multihal.rc
+vendor/etc/vintf/manifest/android.hardware.sensors-multihal.xml:vendor/etc/vintf/manifest/infinix-android.hardware.sensors-multihal.xml
 vendor/lib/hw/sensors.unisoc.so
 vendor/lib/MemsicAlgo.so
 vendor/lib/libQstAlgo.so
@@ -642,8 +642,8 @@ vendor/lib64/hw/thermal.default.so
 
 # USB
 vendor/bin/hw/android.hardware.usb-service.example
-vendor/etc/init/android.hardware.usb-service.example.rc
-vendor/etc/vintf/manifest/android.hardware.usb-service.example.xml
+vendor/etc/init/android.hardware.usb-service.example.rc:vendor/etc/init/infinix-android.hardware.usb-service.example.rc
+vendor/etc/vintf/manifest/android.hardware.usb-service.example.xml:vendor/etc/vintf/manifest/infinix-android.hardware.usb-service.example.xml
 
 # Vibrator
 vendor/lib/hw/vibrator.default.so
@@ -653,11 +653,11 @@ vendor/lib64/hw/vibrator.default.so
 vendor/bin/hw/android.hardware.wifi@1.0-service-lazy
 vendor/bin/hw/hostapd
 vendor/bin/hw/wpa_supplicant
-vendor/etc/init/android.hardware.wifi.supplicant-service.rc
-vendor/etc/init/android.hardware.wifi@1.0-service-lazy.rc
-vendor/etc/vintf/manifest/android.hardware.wifi.hostapd.xml
-vendor/etc/vintf/manifest/android.hardware.wifi.supplicant.xml
-vendor/etc/vintf/manifest/android.hardware.wifi@1.0-service.xml
+vendor/etc/init/android.hardware.wifi.supplicant-service.rc:vendor/etc/init/infinix-android.hardware.wifi.supplicant-service.rc
+vendor/etc/init/android.hardware.wifi@1.0-service-lazy.rc:vendor/etc/init/infinix-android.hardware.wifi@1.0-service-lazy.rc
+vendor/etc/vintf/manifest/android.hardware.wifi.hostapd.xml:vendor/etc/vintf/manifest/infinix-android.hardware.wifi.hostapd.xml
+vendor/etc/vintf/manifest/android.hardware.wifi.supplicant.xml:vendor/etc/vintf/manifest/infinix-android.hardware.wifi.supplicant.xml
+vendor/etc/vintf/manifest/android.hardware.wifi@1.0-service.xml:vendor/etc/vintf/manifest/infinix-android.hardware.wifi@1.0-service.xml
 vendor/lib/libwifi-hal.so
 vendor/lib64/libkeystore-engine-wifi-hidl.so
 vendor/lib64/libkeystore-wifi-hidl.so
@@ -1302,7 +1302,7 @@ vendor/etc/init/adbtestmode.rc
 vendor/etc/init/ai_engine-default.rc
 vendor/etc/init/antiflashing.rc
 vendor/etc/init/autotest.rc
-vendor/etc/init/boringssl_self_test.rc
+vendor/etc/init/boringssl_self_test.rc:vendor/etc/init/infinix-boringssl_self_test.rc
 vendor/etc/init/charge.rc
 vendor/etc/init/charged.rc
 vendor/etc/init/connmgr.rc
@@ -1311,8 +1311,8 @@ vendor/etc/init/cplog_svc-default.rc
 vendor/etc/init/dcxsrv.rc
 vendor/etc/init/engpc.rc
 vendor/etc/init/enhance-default.rc
-vendor/etc/init/face-default.rc
-vendor/etc/init/hostapd.android.rc
+vendor/etc/init/face-default.rc:vendor/etc/init/infinix-face-default.rc
+vendor/etc/init/hostapd.android.rc:vendor/etc/init/infinix-hostapd.android.rc
 vendor/etc/init/init.charge.common.rc
 vendor/etc/init/init.dts.common.rc
 vendor/etc/init/init.fpsmgr.rc
@@ -1355,7 +1355,7 @@ vendor/etc/init/vendor.sprd.hardware.connmgr@1.0-service.rc
 vendor/etc/init/vendor.sprd.hardware.gnss@2.2-service.rc
 vendor/etc/init/vendor.sprd.hardware.tranHwInfo@1.0-service.rc
 vendor/etc/init/vendor.sprd.hardware.wcn@1.0-service.rc
-vendor/etc/init/vndservicemanager.rc
+vendor/etc/init/vndservicemanager.rc:vendor/etc/init/infinix-vndservicemanager.rc
 vendor/etc/init/vowifi.rc
 vendor/etc/init/yloglite.rc
 vendor/etc/memfusion2/fstab.enableswap
@@ -1767,7 +1767,7 @@ vendor/etc/res/images/number_percent_720X1280_rotate.png
 vendor/etc/seccomp_policy/android.hardware.media.c2@1.1-unisoc-seccomp_policy
 vendor/etc/seccomp_policy/mediaextractor.policy
 vendor/etc/vintf/manifest/ai_engine-default.xml
-vendor/etc/vintf/manifest/bluetooth_audio.xml
+vendor/etc/vintf/manifest/bluetooth_audio.xml:vendor/etc/vintf/manifest/infinix-bluetooth_audio.xml
 vendor/etc/vintf/manifest/combinedservice.xml
 vendor/etc/vintf/manifest/cplog_svc-default.xml
 vendor/etc/vintf/manifest/enhance-default.xml

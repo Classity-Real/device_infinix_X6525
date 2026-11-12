@@ -113,48 +113,7 @@ jobs:
           set -o pipefail
           source build/envsetup.sh
           lunch lineage_X6525-userdebug
-          python3 - <<'PY'
-          import glob, os, re
-
-          aux = set()
-          bp_pat = re.compile(r'(?:init_rc|vintf_fragments)\s*:\s*\[(.*?)\]', re.S)
-          mk_pat = re.compile(r'LOCAL_(?:INIT_RC|VINTF_FRAGMENTS)\s*[:+]?=\s*(.*)')
-          for root, dirs, files in os.walk('.'):
-              dirs[:] = [d for d in dirs if d not in ('out', '.repo', '.git')]
-              for f in files:
-                  path = os.path.join(root, f)
-                  if not (f.endswith('.bp') or f.endswith('.mk')):
-                      continue
-                  try:
-                      s = open(path, errors='ignore').read()
-                  except OSError:
-                      continue
-                  for m in bp_pat.findall(s):
-                      for p in re.findall(r'"([^"]+)"', m):
-                          aux.add(os.path.basename(p))
-                  for m in mk_pat.findall(s):
-                      for p in m.split():
-                          aux.add(os.path.basename(p.strip('\\')))
-
-          stock = {}
-          for d in ('vendor', 'odm', 'system_ext'):
-              base = f'vendor/infinix/X6525/proprietary/{d}/etc'
-              for sub in ('init', 'vintf/manifest'):
-                  for p in glob.glob(os.path.join(base, sub, '**', '*'), recursive=True):
-                      if os.path.isfile(p):
-                          stock.setdefault(os.path.basename(p), []).append(p)
-
-          print(f'{len(aux)} soong aux basenames, {len(stock)} stock aux files')
-          print('--- CLASHES (stock file <-> a soong module installs the same name) ---')
-          for n in sorted(stock):
-              if n in aux:
-                  print(n, stock[n])
-          print('--- stock aux without a clash ---')
-          for n in sorted(stock):
-              if n not in aux:
-                  print(n)
-          PY
-          exit 1
+          mka bacon -j"$(nproc)"
 
       - name: Collect images
         if: always()
