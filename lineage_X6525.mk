@@ -13,25 +13,16 @@ $(call inherit-product, device/infinix/X6525/device.mk)
 # Inherit some common Lineage stuff.
 $(call inherit-product, vendor/lineage/config/common_full_phone.mk)
 
-# The stock vendor image already provides the HAL services below, so never
-# build the AOSP counterparts: their init scripts or VINTF fragments would
-# either duplicate a stock service name or declare the same HAL twice (which
-# libvintf rejects with "HAL ... has a conflict").
-#
-#  - android.hardware.biometrics.face-service.example: the stock
-#    vendor.sprd.hardware.biometrics.face-service provides IFace/default.
-#  - android.hardware.cas@1.2-service: stock android.hardware.cas@1.2-service-lazy
-#  - android.hardware.media.omx@1.0-service: stock media.omx service
-#  - rild: stock Unisoc vendor.ril-daemon (urild)
-#  - boringssl_self_test(_vendor): stock vendor self-test binaries and script
-PRODUCT_PACKAGES := $(filter-out \
-    android.hardware.biometrics.face-service.example \
-    android.hardware.cas@1.2-service \
-    android.hardware.media.omx@1.0-service \
-    boringssl_self_test \
-    boringssl_self_test_vendor \
-    rild, \
-    $(PRODUCT_PACKAGES))
+# The stock vendor image is the source of truth for the shared HAL services.
+# Packages cannot be removed from PRODUCT_PACKAGES here: product inheritance is
+# resolved after this file is parsed, so $(filter-out ...) only sees the
+# @inherit tags, not the packages added by the inherited makefiles. Instead the
+# stock init scripts are shipped at the same paths as the AOSP ones (see
+# proprietary-files.txt), so the stock PRODUCT_COPY_FILES rule overrides the
+# source-built install rule (BUILD_BROKEN_DUP_RULES). This covers the cas,
+# media.omx, rild and boringssl services. The stock cas VINTF fragment is not
+# shipped at all: AOSP's identical fragment is the single declaration.
+
 
 
 PRODUCT_DEVICE := X6525

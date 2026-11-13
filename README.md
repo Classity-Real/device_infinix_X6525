@@ -145,16 +145,30 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
   impl/helper libraries). The stock vendor image is the source of truth for
   those paths; `BUILD_BROKEN_DUP_RULES` lets the stock `PRODUCT_COPY_FILES`
   rule win over the source-built install rule
-* the AOSP HAL modules whose services the stock vendor image already provides
-  are removed from `PRODUCT_PACKAGES` in `lineage_X6525.mk`
-  (`android.hardware.cas@1.2-service`, `android.hardware.media.omx@1.0-service`,
-  `rild`, `boringssl_self_test[_vendor]`), and the AOSP boot/health HAL
-  packages are not added in `device.mk`. Otherwise their init scripts would
-  redeclare a stock service and their VINTF fragments would declare the same
-  HAL twice, which libvintf rejects with `HAL ... has a conflict` during OTA
-  packaging. The stock `vendor.sprd.hardware.boot@1.2-service` also registers
-  `android.hardware.boot@1.2::IBootControl/default`, and the stock
-  `android.hardware.health-service.example` is the device's AIDL health HAL
+* the stock init scripts of the HAL services that AOSP also installs are
+  shipped at the *same* paths as the AOSP ones
+  (`android.hardware.cas@1.2-service.rc` — the stock lazy service renamed to
+  the non-lazy name, `android.hardware.media.omx@1.0-service.rc`, `rild.rc` —
+  the stock Unisoc `unisoc.rild.rc`, `boringssl_self_test.rc`), so the stock
+  `PRODUCT_COPY_FILES` rule overrides the source-built install rule and only
+  one copy of each file ends up in the image. This matters because
+  `PRODUCT_PACKAGES` cannot drop inherited packages: product inheritance is
+  resolved after the product makefile is parsed, so a `$(filter-out ...)` in
+  `lineage_X6525.mk` only sees the `@inherit` tags, not the packages added by
+  the inherited makefiles
+* the stock cas 1.2 VINTF fragment is not shipped: AOSP's `android.hardware.
+  cas@1.2-service` module installs a byte-equivalent fragment as
+  `android.hardware.cas@1.2-service.xml`. Shipping the stock lazy fragment
+  under a different name made libvintf reject the image with `HAL
+  android.hardware.cas has a conflict` during OTA packaging. VINTF fragments
+  cannot use the same-path override trick because extract-utils packages them
+  as `prebuilt_etc_xml` modules (a module name clash with the AOSP service)
+* the AOSP boot and health HAL packages are not added in `device.mk`: the
+  stock `vendor.sprd.hardware.boot@1.2-service` also registers
+  `android.hardware.boot@1.2::IBootControl/default` and the stock
+  `android.hardware.health-service.example` is the AIDL health HAL. Keeping
+  the AOSP boot HAL would duplicate the `android.hardware.boot@1.2` entry that
+  the device manifest already declares
 * `BUILD_BROKEN_DUP_RULES := true`: every stock blob is shipped, so the stock
   `PRODUCT_COPY_FILES` rules also duplicate the paths installed by Android.mk
   based modules (the vendor HIDL/AIDL HAL services such as

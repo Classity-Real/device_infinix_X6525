@@ -467,8 +467,9 @@ odm/etc/camera/3rdpool/samplenode/tuning/sample_tuning_2.txt
 
 # CAS
 vendor/bin/hw/android.hardware.cas@1.2-service-lazy
-vendor/etc/init/android.hardware.cas@1.2-service-lazy.rc:vendor/etc/init/infinix-android.hardware.cas@1.2-service-lazy.rc
-vendor/etc/vintf/manifest/android.hardware.cas@1.2-service-lazy.xml:vendor/etc/vintf/manifest/infinix-android.hardware.cas@1.2-service-lazy.xml
+vendor/etc/init/android.hardware.cas@1.2-service-lazy.rc:vendor/etc/init/android.hardware.cas@1.2-service.rc
+# The stock cas 1.2 VINTF fragment is not shipped: AOSP installs an identical
+# fragment as android.hardware.cas@1.2-service.xml from the cas 1.2 service module
 
 # Display
 vendor/bin/hw/android.hardware.graphics.allocator@4.0-service
@@ -548,7 +549,7 @@ vendor/lib64/hw/local_time.default.so
 vendor/bin/hw/android.hardware.media.c2@1.1-unisoc-service
 vendor/bin/hw/android.hardware.media.omx@1.0-service
 vendor/etc/init/android.hardware.media.c2@1.1-unisoc-service.rc:vendor/etc/init/infinix-android.hardware.media.c2@1.1-unisoc-service.rc
-vendor/etc/init/android.hardware.media.omx@1.0-service.rc:vendor/etc/init/infinix-android.hardware.media.omx@1.0-service.rc
+vendor/etc/init/android.hardware.media.omx@1.0-service.rc
 vendor/lib/libcodec2_hidl@1.1.so
 vendor/lib/libcodec2_hidl_plugin.so
 vendor/lib/libcodec2_unisoc_common.so
@@ -586,7 +587,7 @@ vendor/lib64/hw/power.default.so
 system_ext/etc/init/dataLogDaemon.rc:system_ext/etc/init/infinix-dataLogDaemon.rc
 system_ext/etc/init/data_rps.rc:system_ext/etc/init/infinix-data_rps.rc
 vendor/bin/hw/urild
-vendor/etc/init/unisoc.rild.rc:vendor/etc/init/infinix-unisoc.rild.rc
+vendor/etc/init/unisoc.rild.rc:vendor/etc/init/rild.rc
 vendor/lib/librilcore.so
 vendor/lib/vendor.unisoc.hardware.radio.data-V1-ndk.so
 vendor/lib/vendor.unisoc.hardware.radio.ims-V1-ndk.so
@@ -1302,7 +1303,7 @@ vendor/etc/init/adbtestmode.rc:vendor/etc/init/infinix-adbtestmode.rc
 vendor/etc/init/ai_engine-default.rc:vendor/etc/init/infinix-ai_engine-default.rc
 vendor/etc/init/antiflashing.rc:vendor/etc/init/infinix-antiflashing.rc
 vendor/etc/init/autotest.rc:vendor/etc/init/infinix-autotest.rc
-vendor/etc/init/boringssl_self_test.rc:vendor/etc/init/infinix-boringssl_self_test.rc
+vendor/etc/init/boringssl_self_test.rc
 vendor/etc/init/charge.rc:vendor/etc/init/infinix-charge.rc
 vendor/etc/init/charged.rc:vendor/etc/init/infinix-charged.rc
 vendor/etc/init/connmgr.rc:vendor/etc/init/infinix-connmgr.rc
