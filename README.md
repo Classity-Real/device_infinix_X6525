@@ -30,6 +30,16 @@ lunch lineage_X6525-userdebug
 mka bacon
 ```
 
+CI (`Build LineageOS 20 (X6525)`) uploads two artifacts per run:
+
+| Artifact | Contents |
+|---|---|
+| `lineage-20.0-X6525-<run>` | the ROM zip plus `boot.img`, `vendor_boot.img`, `dtbo.img`, `super_empty.img` |
+| `boot-images-X6525-<run>` | only those four images, for boot-flow iterations without a 1.6 GB download |
+
+`publish-artifact.yml` mirrors the `lineage-20.0-X6525-*` artifact to Namespace
+artifact storage after every successful build.
+
 ### Boot and recovery images only
 
 For kernel/boot-flow bring-up there is a second workflow,

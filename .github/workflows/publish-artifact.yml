@@ -51,10 +51,12 @@ jobs:
             echo "::error::build run $run_id concluded '$conclusion'"
             exit 1
           fi
+          # A run also uploads a small boot-images-X6525-* artifact; pick the
+          # ROM one explicitly instead of relying on the API list order.
           name=$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" \
-            --jq '[.artifacts[] | select(.expired == false)][0].name')
+            --jq '[.artifacts[] | select(.expired == false and (.name | startswith("lineage-20.0-X6525-")))][0].name')
           if [ -z "$name" ] || [ "$name" = "null" ]; then
-            echo "::error::build run $run_id has no unexpired artifact"
+            echo "::error::build run $run_id has no unexpired lineage-20.0-X6525-* artifact"
             exit 1
           fi
           echo "run-id=$run_id" >> "$GITHUB_OUTPUT"

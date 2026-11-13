@@ -164,3 +164,20 @@ jobs:
           path: artifacts/*
           if-no-files-found: warn
           retention-days: 14
+
+      # The three images outside the dynamic partitions, as a separate small
+      # artifact: iterating on the boot flow should not require downloading the
+      # 1.6 GB ROM zip. Keep the name distinct from lineage-* because
+      # publish-artifact.yml mirrors the ROM artifact by that prefix.
+      - name: Upload boot images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boot-images-X6525-${{ github.run_number }}
+          path: |
+            artifacts/boot.img
+            artifacts/vendor_boot.img
+            artifacts/dtbo.img
+            artifacts/super_empty.img
+          if-no-files-found: warn
+          retention-days: 14
