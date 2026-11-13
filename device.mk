@@ -9,6 +9,19 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
 # A/B
 $(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota.mk)
 
+# Userspace snapshots
+#
+# The stock vendor.prop sets ro.virtual_ab.compression.enabled=true and
+# ro.virtual_ab.userspace.snapshots.enabled=true (and io_uring off, which is why
+# virtual_ab_ota/compression.mk is not inherited: it would turn io_uring on).
+# With userspace snapshots the first boot after an OTA maps the dynamic
+# partitions through dm-user, and first-stage init execs snapuserd from the
+# ramdisk to serve those devices. virtual_ab_ota/compression.mk is what
+# installs that binary into the vendor ramdisk (snapuserd.vendor_ramdisk);
+# without it first-stage init cannot mount /system on the freshly updated slot.
+PRODUCT_PACKAGES += \
+    snapuserd.vendor_ramdisk
+
 # The stock vendor.sprd.hardware.boot@1.2-service also registers the standard
 # android.hardware.boot@1.2::IBootControl/default instance, so the AOSP boot
 # HAL (whose VINTF fragment duplicates the stock device manifest entry) is not

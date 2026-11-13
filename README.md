@@ -219,6 +219,15 @@ in the ramdisk and keeps it as root; on a normal boot it switches root to
 `/first_stage_ramdisk` and the overlay disappears. That is exactly what stock
 does.
 
+The stock `vendor.prop` enables virtual A/B compression and userspace snapshots
+(`ro.virtual_ab.compression.enabled` / `ro.virtual_ab.userspace.snapshots.enabled`),
+so the first boot after an OTA maps the updated dynamic partitions through
+dm-user and first-stage init must exec `snapuserd` from the ramdisk. Stock keeps
+`ro.virtual_ab.io_uring.enabled=false`, so `virtual_ab_ota/compression.mk` is
+not inherited (it would force io_uring on); `snapuserd.vendor_ramdisk` is added
+explicitly in `device.mk` instead, which is the only module that makefile
+contributes for this flow.
+
 ## Post-generation fixes
 
 `aospdtgen` output was corrected as follows:
