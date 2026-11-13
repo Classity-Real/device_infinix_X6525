@@ -178,6 +178,15 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
   the whole stock partition as `PRODUCT_COPY_FILES`, so the libraries and HAL
   binaries are ELF files copied into `vendor/{bin,lib,lib64}`, which the build
   system otherwise rejects in favour of `cc_prebuilt_*` modules
+* `vintf/framework_compatibility_matrix.xml`, wired through
+  `DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE`: `checkvintf --check-compat`
+  requires every instance of the device manifest to be declared in the
+  framework compatibility matrix. The stock vendor image exposes 36
+  vendor-specific HAL instances (`vendor.goodix.*`, `vendor.silead.*`,
+  `vendor.sprd.*`, `vendor.transsion.*`, `vendor.unisoc.*`, including the
+  `/slot1` and `/slot2` radio instances), so the fragment declares all of them
+  as `optional="true"` (`assemble_vintf` checks the fragment against an empty
+  manifest and rejects required HALs)
 * the stock `product.prop` `ro.config.ringtone`, `ro.config.notification_sound`
   and `ro.config.alarm_alert` assignments were dropped: LineageOS sets the
   same keys in its common config and the build rejects duplicate sysprops

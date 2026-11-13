@@ -179,5 +179,11 @@ BOARD_AVB_VENDOR_BOOT_ROLLBACK_INDEX_LOCATION := 1
 # VINTF
 DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest.xml
 
+# Vendor-specific HALs that the framework must be allowed to talk to. Without
+# this fragment checkvintf rejects the OTA with "The following instances are in
+# the device manifest but not specified in framework compatibility matrix".
+DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE := \
+    $(DEVICE_PATH)/vintf/framework_compatibility_matrix.xml
+
 # Proprietary files
 include vendor/infinix/X6525/BoardConfigVendor.mk
