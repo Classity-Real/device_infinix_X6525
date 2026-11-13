@@ -46,13 +46,48 @@ mka bootimage vendorbootimage superimage_empty \
 | Target | Output |
 |---|---|
 | `bootimage` | `boot.img` (stock kernel, generic ramdisk) |
-| `vendorbootimage` | `vendor_boot.img` (DTB + vendor ramdisk + Lineage recovery ramdisk) |
+| `vendorbootimage` | `vendor_boot.img` (DTB + vendor ramdisk, recovery overlay included) |
 | `out/target/product/X6525/dtbo.img` | `dtbo.img` |
 | `superimage_empty` | `super_empty.img` |
 
 `recovery.img` does not exist for this device: `TARGET_NO_RECOVERY := true` and
-`BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true`, so the recovery ramdisk
-is packed into `vendor_boot.img`.
+`BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true`, so the Lineage recovery
+resources are merged into the *platform* ramdisk of `vendor_boot.img`.
+
+`BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT` is deliberately `false`. Setting
+it to `true` puts recovery in a separate RECOVERY ramdisk fragment (`--ramdisk_type
+RECOVERY`), but the Unisoc bootloader does not select fragments: the stock
+`vendor_boot.img` has a single PLATFORM entry (empty name) that already contains
+`/system/bin/recovery` and the recovery init files. First-stage init implements
+the same rule as stock - it enters recovery when
+`androidboot.force_normal_boot=1` is *not* set, and otherwise switches root to
+`/first_stage_ramdisk`, which hides the recovery overlay. Merging the resources
+into the platform ramdisk reproduces that layout, so the stock bootloader can
+boot either mode from one ramdisk.
+
+The recovery fstab is `rootdir/etc/recovery.fstab` (stock recovery.fstab sans
+`avb=`, plus `/data`, `/cache` and `/misc`); the first-stage fstab stays
+`rootdir/etc/fstab.X6525`.
+
+### Debugging a non-booting build
+
+There is no serial console on this board, so a failing boot looks like a plain
+reboot loop. `androidboot.selinux=permissive` is currently passed on the kernel
+command line as a bring-up aid (`BOARD_KERNEL_CMDLINE`); drop it once the ROM
+boots and the denials have been added to `sepolicy`.
+
+The stock DTB already reserves `ramoops@fff80000` and the stock kernel is built
+with `CONFIG_PSTORE_RAM`, `CONFIG_PSTORE_CONSOLE` and `CONFIG_PANIC_ON_OOPS`, so
+the kernel log of a failed boot survives in RAM. Because recovery is packed into
+the platform vendor ramdisk, it can be used as the log reader:
+
+```sh
+adb reboot recovery
+adb wait-for-device
+adb shell cat /sys/fs/pstore/console-ramoops-0
+```
+
+`/sys/fs/pstore/dmesg-ramoops-*` holds the panic/oops records.
 
 The stock kernel, DTB, DTBO and all kernel modules (vendor ramdisk and
 `vendor_dlkm`) are shipped as prebuilts under `prebuilts/` because no GPL kernel
@@ -220,6 +255,7 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
   those only hash the stock super images. This tree builds its own super images
   and does not refresh those vbmetas, so `avb=` in the first-stage fstab made
   init fail the hash check and reboot before the boot animation. The first-stage
-  fstab therefore mounts the logical partitions without `avb=`.
+  fstab therefore mounts the logical partitions without `avb=`, and the same
+  applies to the recovery fstab.
   Bootloader-side verification is left to the user: the device's vbmeta is
   already disabled, so the testkey-signed boot/vendor_boot/dtbo are accepted

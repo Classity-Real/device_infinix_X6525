@@ -1,13 +1,14 @@
 name: Build boot images (X6525)
 
 # Builds only the images that live outside the dynamic partitions: boot,
-# vendor_boot (which carries the Lineage recovery ramdisk), dtbo, vbmeta and
+# vendor_boot (which carries the Lineage recovery overlay), dtbo and
 # super_empty. Useful while iterating on the kernel/boot flow, because it skips
 # system/system_ext/vendor/product/odm/vendor_dlkm entirely.
 #
-# The recovery ramdisk is part of vendor_boot.img on this device
-# (TARGET_NO_RECOVERY := true, BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT),
-# so there is no recovery.img to build.
+# The recovery overlay is merged into the platform ramdisk of vendor_boot.img
+# (TARGET_NO_RECOVERY := true, BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT :=
+# true, BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := false), so there is no
+# recovery.img to build.
 #
 # Triggered manually: Actions -> "Build boot images (X6525)" -> Run workflow,
 # or `gh workflow run boot.yml -R Classity-Real/device_infinix_X6525`.

@@ -1,0 +1,26 @@
+# Recovery fstab for the Infinix X6525 (ums9230 / qogirl6).
+#
+# Derived from the stock /system/etc/recovery.fstab. The avb= and avb_keys=
+# options are dropped for the same reason as in fstab.X6525: the chained
+# vbmeta_system / vbmeta_vendor / vbmeta_odm / vbmeta_product /
+# vbmeta_system_ext partitions still describe the stock super images, so
+# verifying our freshly built logical partitions against them always fails.
+#
+# The <partition> <mount point> entries with a bare name are logical partitions
+# inside super; the /dev/block/by-name/... entries are physical partitions.
+system /system erofs ro wait,logical,slotselect
+system_ext /system_ext erofs ro wait,logical,slotselect
+vendor /vendor erofs ro wait,logical,slotselect
+odm /odm erofs ro wait,logical,slotselect
+product /product erofs ro wait,logical,slotselect
+vendor_dlkm /vendor_dlkm erofs ro wait,logical,slotselect
+
+/dev/block/by-name/misc /misc emmc defaults defaults
+/dev/block/by-name/persist /persist ext4 noatime,nosuid,nodev,nomblk_io_submit,noauto_da_alloc wait,check
+/dev/block/by-name/metadata /metadata f2fs nodev,noatime,nosuid wait,formattable,check
+/dev/block/by-name/metadata /metadata ext4 nodev,noatime,nosuid,errors=panic wait,formattable,check
+
+/dev/block/by-name/userdata /data f2fs noatime,nosuid,nodev,discard,reserve_root=32768,resgid=1065,inline_xattr,inline_data,inlinecrypt,fsync_mode=nobarrier,compress_cache,compress_algorithm=lz4,compress_log_size=2,compress_extension=apk,compress_extension=so,compress_mode=fs latemount,wait,check,fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized,keydirectory=/metadata/vold/metadata_encryption,reservedsize=128M,checkpoint=fs,formattable,fscompress
+
+/dev/block/by-name/cache /cache f2fs noatime,nosuid,nodev,discard wait,check,formattable
+/dev/block/by-name/cache /cache ext4 noatime,nosuid,nodev,nomblk_io_submit,noauto_da_alloc wait,check,formattable
