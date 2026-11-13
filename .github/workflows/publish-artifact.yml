@@ -1,0 +1,87 @@
+name: Publish build artifact to Namespace
+
+# Mirrors the artifact of a successful "Build LineageOS 20 (X6525)" run into
+# Namespace artifact storage (namespace-actions/upload-artifact), so the ROM
+# can be fetched without GitHub's artifact quota/retention.
+#
+# - runs automatically after every successful Build run
+# - can also be run manually, optionally for a specific build run id
+
+on:
+  workflow_run:
+    workflows: ["Build LineageOS 20 (X6525)"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run-id:
+        description: "Build run ID to publish (leave empty for the latest successful build)"
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: publish-artifact-${{ github.event.workflow_run.id || inputs.run-id || 'latest' }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish to Namespace artifacts
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: namespace-profile-workshop
+    timeout-minutes: 90
+
+    steps:
+      - name: Resolve build run and artifact
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id='${{ inputs.run-id || github.event.workflow_run.id }}'
+          if [ -z "$run_id" ]; then
+            run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml \
+              --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          fi
+          conclusion=$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$run_id" --jq .conclusion)
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::build run $run_id concluded '$conclusion'"
+            exit 1
+          fi
+          name=$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" \
+            --jq '[.artifacts[] | select(.expired == false)][0].name')
+          if [ -z "$name" ] || [ "$name" = "null" ]; then
+            echo "::error::build run $run_id has no unexpired artifact"
+            exit 1
+          fi
+          echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "artifact-name=$name" >> "$GITHUB_OUTPUT"
+          echo "Publishing $name from run $run_id"
+
+      - name: Download artifact from the Build run
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.resolve.outputs.run-id }}
+          github-token: ${{ github.token }}
+          path: artifact
+
+      - name: Inspect download
+        run: |
+          set -euo pipefail
+          find artifact -type f -printf '%10s  %p\n' | sort -n
+          sha256sum artifact/*/* 2>/dev/null || true
+
+      - name: Upload to Namespace artifacts
+        uses: namespace-actions/upload-artifact@v1
+        with:
+          name: ${{ steps.resolve.outputs.artifact-name }}
+          path: artifact/${{ steps.resolve.outputs.artifact-name }}
+          # The ROM zip is already compressed; storing it as-is avoids a second
+          # multi-minute compression pass on a ~1.6 GB payload.
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+          overwrite: true
