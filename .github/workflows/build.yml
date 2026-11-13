@@ -129,17 +129,33 @@ jobs:
           set -o pipefail
           source build/envsetup.sh
           lunch lineage_X6525-userdebug
-          mka bacon -j"$(nproc)"
+          # vendorbootimage is an explicit goal because `bacon` builds
+          # vendor_boot.img only inside the target-files package, not into
+          # out/target/product/X6525.
+          mka bacon vendorbootimage -j"$(nproc)"
 
       - name: Collect images
         if: always()
         run: |
           out=lineage/out/target/product/X6525
           mkdir -p artifacts
-          for f in lineage-20.0-*.zip boot.img vendor_boot.img dtbo.img super_empty.img; do
-            [ -e "$out/$f" ] && cp "$out/$f" artifacts/ || true
+          # The globs must be prefixed with $out: an unquoted wildcard is
+          # expanded relative to the current directory, not to $out.
+          shopt -s nullglob
+          for f in "$out"/lineage-20.0-*.zip \
+                   "$out"/boot.img \
+                   "$out"/vendor_boot.img \
+                   "$out"/dtbo.img \
+                   "$out"/vbmeta.img \
+                   "$out"/super_empty.img; do
+            [ -e "$f" ] && cp -v "$f" artifacts/ || true
           done
+          if [ ! -e artifacts/vendor_boot.img ]; then
+            cp -v "$out"/obj/PACKAGING/target_files_intermediates/*/IMAGES/vendor_boot.img \
+              artifacts/ || true
+          fi
           ls -lh artifacts || true
+          sha256sum artifacts/* 2>/dev/null || true
 
       - name: Upload build
         if: always()
