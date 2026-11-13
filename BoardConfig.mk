@@ -167,8 +167,12 @@ TARGET_VENDOR_DLKM_PROP += $(DEVICE_PATH)/vendor_dlkm.prop
 VENDOR_SECURITY_PATCH := 2024-05-05
 
 # Verified Boot
-# The stock vbmeta images have verification disabled; do the same so the
-# bootloader does not reject the self signed LineageOS images.
+# boot/vendor_boot/dtbo are hash-footered with the AOSP testkey. Bootloader-side
+# verification is disabled on the device separately (the stock vbmeta has
+# Flags: 0 and chains those three partitions to Transsion keys, so a stock
+# vbmeta would reject our images); this tree does not ship a vbmeta.img.
+# dm-verity for the dynamic partitions is disabled in the first-stage fstab,
+# see rootdir/etc/fstab.X6525.
 BOARD_AVB_ENABLE := true
 BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS += --flags 3
 BOARD_AVB_VENDOR_BOOT_KEY_PATH := external/avb/test/data/testkey_rsa4096.pem

@@ -146,7 +146,6 @@ jobs:
                    "$out"/boot.img \
                    "$out"/vendor_boot.img \
                    "$out"/dtbo.img \
-                   "$out"/vbmeta.img \
                    "$out"/super_empty.img; do
             [ -e "$f" ] && cp -v "$f" artifacts/ || true
           done

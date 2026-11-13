@@ -39,7 +39,7 @@ it never competes with (or cancels) a full ROM build. Locally the same images
 are built with:
 
 ```sh
-mka bootimage vendorbootimage vbmetaimage superimage_empty \
+mka bootimage vendorbootimage superimage_empty \
     out/target/product/X6525/dtbo.img
 ```
 
@@ -48,7 +48,6 @@ mka bootimage vendorbootimage vbmetaimage superimage_empty \
 | `bootimage` | `boot.img` (stock kernel, generic ramdisk) |
 | `vendorbootimage` | `vendor_boot.img` (DTB + vendor ramdisk + Lineage recovery ramdisk) |
 | `out/target/product/X6525/dtbo.img` | `dtbo.img` |
-| `vbmetaimage` | `vbmeta.img` |
 | `superimage_empty` | `super_empty.img` |
 
 `recovery.img` does not exist for this device: `TARGET_NO_RECOVERY := true` and
@@ -215,4 +214,12 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
 * the stock `product.prop` `ro.config.ringtone`, `ro.config.notification_sound`
   and `ro.config.alarm_alert` assignments were dropped: LineageOS sets the
   same keys in its common config and the build rejects duplicate sysprops
-* `--flags 3` on vbmeta, matching the stock "verification disabled" setup
+* dm-verity is not requested for the dynamic partitions: the stock firmware
+  keeps one chained vbmeta per Treble partition (`vbmeta_system`,
+  `vbmeta_vendor`, `vbmeta_odm`, `vbmeta_product`, `vbmeta_system_ext`) and
+  those only hash the stock super images. This tree builds its own super images
+  and does not refresh those vbmetas, so `avb=` in the first-stage fstab made
+  init fail the hash check and reboot before the boot animation. The first-stage
+  fstab therefore mounts the logical partitions without `avb=`.
+  Bootloader-side verification is left to the user: the device's vbmeta is
+  already disabled, so the testkey-signed boot/vendor_boot/dtbo are accepted

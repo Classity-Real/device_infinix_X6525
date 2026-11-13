@@ -115,13 +115,12 @@ jobs:
           set -o pipefail
           source build/envsetup.sh
           lunch lineage_X6525-userdebug
-          # bootimage/vendorbootimage/vbmetaimage/superimage_empty are phony
-          # targets (build/make/core/main.mk); dtbo.img has no phony target, so
-          # it is requested by its output path.
+          # bootimage/vendorbootimage/superimage_empty are phony targets
+          # (build/make/core/main.mk); dtbo.img has no phony target, so it is
+          # requested by its output path.
           mka \
             bootimage \
             vendorbootimage \
-            vbmetaimage \
             superimage_empty \
             "out/target/product/X6525/dtbo.img"
 
@@ -130,7 +129,7 @@ jobs:
         run: |
           out=lineage/out/target/product/X6525
           mkdir -p artifacts
-          for f in boot.img vendor_boot.img dtbo.img vbmeta.img super_empty.img; do
+          for f in boot.img vendor_boot.img dtbo.img super_empty.img; do
             [ -e "$out/$f" ] && cp "$out/$f" artifacts/ || true
           done
           ls -lh artifacts || true
