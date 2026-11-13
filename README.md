@@ -1,6 +1,6 @@
 # LineageOS 20 device tree — Infinix SMART 8 (X6525)
 
-Unisoc T616 (`ums9230` / `qogirl6`) device tree for LineageOS 20 (Android 13),
+Unisoc T606 (`ums9230` / `qogirl6`) device tree for LineageOS 20 (Android 13),
 matching the stock Android 13 / VNDK 33 vendor image.
 
 Generated with [aospdtgen](https://github.com/sebaubuntu-python/aospdtgen) from a
@@ -11,7 +11,7 @@ hand (see *Post-generation fixes* below).
 
 | | |
 |---|---|
-| SoC | Unisoc T616 (`ums9230`, `qogirl6`) |
+| SoC | Unisoc T606 (`ums9230`, `qogirl6`) |
 | CPU | 2 × Cortex-A75 + 6 × Cortex-A55 |
 | GPU | Mali-G57 MC1 |
 | RAM / storage | 4/6 GB / 64/128 GB |
