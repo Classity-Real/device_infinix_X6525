@@ -9,11 +9,10 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
 # A/B
 $(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota.mk)
 
-PRODUCT_PACKAGES += \
-    android.hardware.boot@1.2-impl \
-    android.hardware.boot@1.2-impl.recovery \
-    android.hardware.boot@1.2-service
-
+# The stock vendor.sprd.hardware.boot@1.2-service also registers the standard
+# android.hardware.boot@1.2::IBootControl/default instance, so the AOSP boot
+# HAL (whose VINTF fragment duplicates the stock device manifest entry) is not
+# built.
 PRODUCT_PACKAGES += \
     update_engine \
     update_engine_sideload \
@@ -32,9 +31,9 @@ PRODUCT_PACKAGES += \
     fastbootd
 
 # Health
-PRODUCT_PACKAGES += \
-    android.hardware.health@2.1-impl \
-    android.hardware.health@2.1-service
+# The stock vendor android.hardware.health AIDL service
+# (android.hardware.health-service.example) is the device health HAL; the AOSP
+# HIDL 2.1 reference service is not installed.
 
 # Overlays
 PRODUCT_ENFORCE_RRO_TARGETS := *

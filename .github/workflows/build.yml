@@ -123,40 +123,7 @@ jobs:
           set -o pipefail
           source build/envsetup.sh
           lunch lineage_X6525-userdebug
-          m nothing || true
-          python3 - <<'PY'
-          import re
-
-          OUT = 'out/target/product/X6525/'
-          aux = re.compile(r'^/(vendor|odm|system_ext|product)/etc/(vintf/manifest/[^/]+\.xml|init/[^/]+\.rc)$')
-          rows = []
-          for line in open('out/soong/installs-lineage_X6525.mk', errors='ignore'):
-              line = line.strip().rstrip('\\').strip()
-              if ':' not in line or line.startswith('#'):
-                  continue
-              tgt, _, pre = line.partition(':')
-              tgt = tgt.strip()
-              if not tgt.startswith(OUT):
-                  continue
-              rel = tgt[len(OUT):]
-              if not aux.match('/' + rel):
-                  continue
-              pre = pre.split(' ')[0]
-              if 'vendor/infinix/X6525' in pre:
-                  continue
-              mod = ''
-              m = re.search(r'/intermediates/(.+?)/android_', pre)
-              if m:
-                  mod = m.group(1)
-              else:
-                  mod = pre
-              rows.append((rel, mod, pre))
-
-          print(f'{len(rows)} AOSP-installed aux files under vendor/odm/system_ext/product')
-          for rel, mod, pre in sorted(rows):
-              print('AUX', rel, '|', mod)
-          PY
-          exit 1
+          mka bacon -j"$(nproc)"
 
       - name: Collect images
         if: always()

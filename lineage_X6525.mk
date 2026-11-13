@@ -13,14 +13,26 @@ $(call inherit-product, device/infinix/X6525/device.mk)
 # Inherit some common Lineage stuff.
 $(call inherit-product, vendor/lineage/config/common_full_phone.mk)
 
-# The stock Unisoc face HAL (vendor.sprd.hardware.biometrics.face-service)
-# already provides android.hardware.biometrics.face IFace/default, so never
-# build the reference example implementation even if a common product pulls it
-# in. Its VINTF fragment is also installed as face-default.xml, i.e. the stock
-# fragment's original file name; the stock one is renamed to
-# vendor.sprd.hardware.biometrics.face.xml in proprietary-files.txt so the
-# generated make rules cannot collide.
-PRODUCT_PACKAGES := $(filter-out android.hardware.biometrics.face-service.example,$(PRODUCT_PACKAGES))
+# The stock vendor image already provides the HAL services below, so never
+# build the AOSP counterparts: their init scripts or VINTF fragments would
+# either duplicate a stock service name or declare the same HAL twice (which
+# libvintf rejects with "HAL ... has a conflict").
+#
+#  - android.hardware.biometrics.face-service.example: the stock
+#    vendor.sprd.hardware.biometrics.face-service provides IFace/default.
+#  - android.hardware.cas@1.2-service: stock android.hardware.cas@1.2-service-lazy
+#  - android.hardware.media.omx@1.0-service: stock media.omx service
+#  - rild: stock Unisoc vendor.ril-daemon (urild)
+#  - boringssl_self_test(_vendor): stock vendor self-test binaries and script
+PRODUCT_PACKAGES := $(filter-out \
+    android.hardware.biometrics.face-service.example \
+    android.hardware.cas@1.2-service \
+    android.hardware.media.omx@1.0-service \
+    boringssl_self_test \
+    boringssl_self_test_vendor \
+    rild, \
+    $(PRODUCT_PACKAGES))
+
 
 PRODUCT_DEVICE := X6525
 PRODUCT_NAME := lineage_X6525

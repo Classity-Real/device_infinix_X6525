@@ -138,18 +138,27 @@ cmdline (the build system appends `buildvariant=...`), matching stock.
   so identically named stock files (e.g. `face-default.xml`, `face-default.rc`,
   `android.hardware.wifi@1.0-service.xml`, `power.stats-default.xml`) would
   otherwise create duplicate make targets and abort the build
-* stock copies of files that AOSP builds and installs into the vendor image are
-  not shipped at all: the boringssl self tests, `dumpsys`, `mkshrc`, the
-  `rkp_factory_extraction_tool`, the AOSP HAL services (`android.hardware.
-  audio.service`, `camera.provider@2.4-service`, `graphics.composer@2.4-service`,
-  `sensors-service.multihal`, the health/usb/power.stats examples, ...) and their
-  impl/helper libraries (`audio.primary.default.so`, `libvpx.so`,
-  `libstagefright_*`, ...). Soong installs those exact paths, so the stock
-  `PRODUCT_COPY_FILES` rules collided with the source-built install rules. Only
-  the Unisoc-specific blobs are kept
-* `BUILD_BROKEN_DUP_RULES := true`: the stock vendor image also duplicates paths
-  installed by Android.mk based modules (the vendor HIDL/AIDL HAL services such
-  as `android.hardware.wifi@1.0-service-lazy`). With this flag kati warns and
+* every stock blob is shipped, including the files that AOSP also builds into
+  the same vendor paths (boringssl self tests, `dumpsys`, `mkshrc`, the
+  `rkp_factory_extraction_tool`, the AOSP HAL services such as
+  `android.hardware.audio.service` or `camera.provider@2.4-service`, and their
+  impl/helper libraries). The stock vendor image is the source of truth for
+  those paths; `BUILD_BROKEN_DUP_RULES` lets the stock `PRODUCT_COPY_FILES`
+  rule win over the source-built install rule
+* the AOSP HAL modules whose services the stock vendor image already provides
+  are removed from `PRODUCT_PACKAGES` in `lineage_X6525.mk`
+  (`android.hardware.cas@1.2-service`, `android.hardware.media.omx@1.0-service`,
+  `rild`, `boringssl_self_test[_vendor]`), and the AOSP boot/health HAL
+  packages are not added in `device.mk`. Otherwise their init scripts would
+  redeclare a stock service and their VINTF fragments would declare the same
+  HAL twice, which libvintf rejects with `HAL ... has a conflict` during OTA
+  packaging. The stock `vendor.sprd.hardware.boot@1.2-service` also registers
+  `android.hardware.boot@1.2::IBootControl/default`, and the stock
+  `android.hardware.health-service.example` is the device's AIDL health HAL
+* `BUILD_BROKEN_DUP_RULES := true`: every stock blob is shipped, so the stock
+  `PRODUCT_COPY_FILES` rules also duplicate the paths installed by Android.mk
+  based modules (the vendor HIDL/AIDL HAL services such as
+  `android.hardware.wifi@1.0-service-lazy`). With this flag kati warns and
   keeps the last definition, i.e. the stock file, instead of aborting
 * `BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true`: `extract-utils` ships
   the whole stock partition as `PRODUCT_COPY_FILES`, so the libraries and HAL
