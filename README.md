@@ -90,9 +90,15 @@ sets `sys.usb.configfs=1` (and the UDC name) in `on init`, after that
 `early-init` and before `on fs`, so the unmodified recovery `init.rc` creates
 the configfs gadget and the `adb`/`sideload`/`fastboot` triggers work.
 
-The file is installed into `TARGET_ROOT_OUT` because that is where
-`build/make/core/Makefile` picks `init.recovery.*.rc` up from when it assembles
-the recovery ramdisk (`cp $(TARGET_ROOT_OUT)/init.recovery.*.rc ...`). It is
+The file is installed into the ramdisk root (`$(TARGET_COPY_OUT_ROOT)`, i.e.
+`$(PRODUCT_OUT)/root`) because that is where `build/make/core/Makefile` picks
+`init.recovery.*.rc` up from when it assembles the recovery ramdisk
+(`cp $(TARGET_ROOT_OUT)/init.recovery.*.rc ...`). Note that
+`PRODUCT_COPY_FILES` destinations are relative to `$(PRODUCT_OUT)`, so the
+`TARGET_COPY_OUT_*` name must be used; absolute `TARGET_*_OUT` destinations are
+mangled by `append-path()` and silently never built. The first-stage fstab and
+`ueventd.X6525.rc` are installed the same way, under
+`$(TARGET_COPY_OUT_VENDOR_RAMDISK)`, so they end up in the vendor ramdisk. It is
 copied under every board/project name the stock firmware ships init/ueventd
 scripts for (the `ro.hardware` value comes from the bootloader and cannot be
 read back without USB); recovery only imports the one that matches. Note that the recovery gadget uses LineageOS' default IDs
