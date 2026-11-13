@@ -1,0 +1,33 @@
+#
+# SPDX-FileCopyrightText: The LineageOS Project
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Recovery USB
+#
+# The stock 5.4 kernel is built without CONFIG_USB_ANDROID, so the legacy
+# /sys/class/android_usb/android0 gadget does not exist; the only USB gadget
+# interface is configfs (CONFIG_USB_CONFIGFS, CONFIG_USB_CONFIGFS_F_FS). Stock
+# recovery therefore enables the configfs path (init.recovery.common.rc) and
+# sets sys.usb.configfs=1.
+#
+# bootable/recovery does the opposite: its init.rc sets sys.usb.configfs=0 in
+# early-init, so the generic recovery init.rc never runs its
+# "on fs && property:sys.usb.configfs=1" block, /config/usb_gadget/g1 is never
+# created, adbd has no gadget to bind, the UDC is never written and the host
+# sees no device at all (no adb, no fastbootd).
+#
+# This file is imported by the recovery init.rc through
+#   import /init.recovery.${ro.hardware}.rc
+# so it is parsed before the generic recovery actions. "on init" runs after the
+# early-init that sets the flag to 0, and before "on fs" evaluates the
+# configfs=1 conditions, which is exactly what the stock init script does.
+# Everything else (gadget creation, functionfs mounts, the adb/sideload/
+# fastboot triggers and the UDC write) is the unmodified Lineage recovery code.
+on init
+    setprop sys.usb.configfs 1
+    # UDC name of the Unisoc musb controller (CONFIG_USB_MUSB_SPRD, DT node
+    # usb@64900000). vendor.prop sets sys.usb.controller to the same value and
+    # the recovery prop.default is built from the vendor build.prop, but the
+    # write is repeated here so USB does not silently depend on that.
+    setprop sys.usb.controller musb-hdrc.0.auto

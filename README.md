@@ -79,6 +79,25 @@ The recovery fstab is `rootdir/etc/recovery.fstab` (stock recovery.fstab sans
 `avb=`, plus `/data`, `/cache` and `/misc`); the first-stage fstab stays
 `rootdir/etc/fstab.X6525`.
 
+### Recovery USB
+
+The stock kernel has no `CONFIG_USB_ANDROID`, so the only gadget interface is
+configfs (the `musb-hdrc.0.auto` UDC exported by `CONFIG_USB_MUSB_SPRD`).
+bootable/recovery defaults to the legacy `/sys/class/android_usb/android0`
+gadget (`sys.usb.configfs=0` in `early-init`), which does not exist here, so
+adbd never binds a gadget and the host sees no device at all. `rootdir/etc/init.recovery.X6525.rc`
+sets `sys.usb.configfs=1` (and the UDC name) in `on init`, after that
+`early-init` and before `on fs`, so the unmodified recovery `init.rc` creates
+the configfs gadget and the `adb`/`sideload`/`fastboot` triggers work.
+
+The file is installed into `TARGET_ROOT_OUT` because that is where
+`build/make/core/Makefile` picks `init.recovery.*.rc` up from when it assembles
+the recovery ramdisk (`cp $(TARGET_ROOT_OUT)/init.recovery.*.rc ...`). It is
+copied under every board/project name the stock firmware ships init/ueventd
+scripts for (the `ro.hardware` value comes from the bootloader and cannot be
+read back without USB); recovery only imports the one that matches. Note that the recovery gadget uses LineageOS' default IDs
+(`18d1:d001` for adb, `18d1:4ee0` for fastboot), not the stock Unisoc ones.
+
 ### Debugging a non-booting build
 
 There is no serial console on this board, so a failing boot looks like a plain

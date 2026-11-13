@@ -69,6 +69,26 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/fstab.X6525:$(TARGET_VENDOR_RAMDISK_OUT)/first_stage_ramdisk/fstab.X6525 \
     $(LOCAL_PATH)/rootdir/etc/ueventd.X6525.rc:$(TARGET_VENDOR_RAMDISK_OUT)/ueventd.X6525.rc
 
+# Recovery init script: switches recovery to the configfs USB gadget, see the
+# file for why. It has to live at the root of the recovery ramdisk, where
+# bootable/recovery's init.rc imports it through
+# "import /init.recovery.${ro.hardware}.rc".
+#
+# build/make/core/Makefile copies $(TARGET_ROOT_OUT)/init.recovery.*.rc into the
+# recovery ramdisk root, so TARGET_ROOT_OUT is the install location. ro.hardware
+# is supplied by the bootloader and cannot be read back on this device without a
+# working USB connection, so the script is installed under every board/project
+# name the stock firmware ships an init/ueventd script for (X6525 or one of the
+# Unisoc ums9230 board names); recovery only imports the matching one.
+RECOVERY_INIT_RC_NAMES := \
+    X6525 \
+    ums9230 ums9230_1h10 ums9230_1h10_go \
+    ums9230_4h10 ums9230_4h10_go \
+    ums9230_6h10 ums9230_7h10 ums9230_haps ums9230_zebu \
+    qogirl6 unknown
+$(foreach name,$(RECOVERY_INIT_RC_NAMES), \
+    $(eval PRODUCT_COPY_FILES += $(LOCAL_PATH)/rootdir/etc/init.recovery.X6525.rc:$(TARGET_ROOT_OUT)/init.recovery.$(name).rc))
+
 # Kernel module helpers read by init.insmod.sh from /vendor/lib/modules
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilts/modules/vendor_dlkm/init.insmod.cfg:$(TARGET_COPY_OUT_VENDOR_DLKM)/lib/modules/init.insmod.cfg \
