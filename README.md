@@ -30,6 +30,31 @@ lunch lineage_X6525-userdebug
 mka bacon
 ```
 
+### Boot and recovery images only
+
+For kernel/boot-flow bring-up there is a second workflow,
+`.github/workflows/boot.yml` ("Build boot images (X6525)"), which skips the
+dynamic partitions entirely. It is triggered manually from the Actions tab, so
+it never competes with (or cancels) a full ROM build. Locally the same images
+are built with:
+
+```sh
+mka bootimage vendorbootimage vbmetaimage superimage_empty \
+    out/target/product/X6525/dtbo.img
+```
+
+| Target | Output |
+|---|---|
+| `bootimage` | `boot.img` (stock kernel, generic ramdisk) |
+| `vendorbootimage` | `vendor_boot.img` (DTB + vendor ramdisk + Lineage recovery ramdisk) |
+| `out/target/product/X6525/dtbo.img` | `dtbo.img` |
+| `vbmetaimage` | `vbmeta.img` |
+| `superimage_empty` | `super_empty.img` |
+
+`recovery.img` does not exist for this device: `TARGET_NO_RECOVERY := true` and
+`BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true`, so the recovery ramdisk
+is packed into `vendor_boot.img`.
+
 The stock kernel, DTB, DTBO and all kernel modules (vendor ramdisk and
 `vendor_dlkm`) are shipped as prebuilts under `prebuilts/` because no GPL kernel
 source drop is available for this device:

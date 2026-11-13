@@ -6,6 +6,8 @@ on:
     branches: [ main ]
     paths-ignore:
       - '**.md'
+      # Workflow-only changes must not trigger a full ROM build.
+      - '.github/workflows/**'
 
 concurrency:
   group: ${{ github.ref }}
@@ -92,8 +94,12 @@ jobs:
           echo "USE_CCACHE=1" >> "$GITHUB_ENV"
           echo "CCACHE_EXEC=/usr/bin/ccache" >> "$GITHUB_ENV"
           echo "CCACHE_COMPILERCHECK=content" >> "$GITHUB_ENV"
-          ccache -M 50G || true
-          ccache -z || true
+          echo "CCACHE_COMPRESS=true" >> "$GITHUB_ENV"
+          # The Namespace cache volume is 49G. A 50G ccache fills it up, which
+          # makes the post-job cache save exceed the volume (and the action
+          # never persists anything). 20G leaves headroom and compresses well.
+          ccache -M 20G || true
+          ccache -s || true
 
       - name: Install repo
         run: |
