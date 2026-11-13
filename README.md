@@ -172,14 +172,27 @@ stock. All read-only partitions use EROFS so they fit.
 
 Stock uses a GKI v4 split:
 
-* `boot.img` — prebuilt kernel, no DTB, no device cmdline, stock generic ramdisk
-* `vendor_boot.img` — DTB, vendor ramdisk, recovery fragment
-  (`TARGET_NO_RECOVERY := true`,
-  `BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true`,
-  `BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true`)
+* `boot.img` — prebuilt kernel + generic ramdisk, no DTB
+* `vendor_boot.img` — DTB + one platform ramdisk
+  (`type: 0x1`, empty name; stock has no ramdisk fragments)
 
-`BOARD_KERNEL_CMDLINE := console=ttyS1,115200n8` is written to the `vendor_boot`
-cmdline (the build system appends `buildvariant=...`), matching stock.
+`BOARD_KERNEL_CMDLINE` (`console=ttyS1,115200n8 androidboot.selinux=permissive`)
+is the `boot.img` cmdline; stock keeps `console=ttyS1,115200n8 buildvariant=user`
+in the `vendor_boot` cmdline instead. The bootloader concatenates both, so either
+placement reaches the kernel.
+
+The vendor ramdisk holds the prebuilt modules, the first-stage fstab and the
+Lineage recovery overlay (`TARGET_NO_RECOVERY := true`,
+`BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true`,
+`BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := false` — see *Boot and
+recovery images only* for why the recovery overlay must live in the platform
+ramdisk instead of a fragment).
+
+Recovery is entered when the bootloader reboots without
+`androidboot.force_normal_boot=1`: first-stage init finds `/system/bin/recovery`
+in the ramdisk and keeps it as root; on a normal boot it switches root to
+`/first_stage_ramdisk` and the overlay disappears. That is exactly what stock
+does.
 
 ## Post-generation fixes
 
