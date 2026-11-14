@@ -114,6 +114,7 @@ BOARD_VENDOR_KERNEL_MODULES_LOAD := $(shell cat $(DEVICE_PATH)/prebuilts/modules
 # Keep the stock modules untouched
 BOARD_DO_NOT_STRIP_VENDOR_MODULES := true
 BOARD_DO_NOT_STRIP_VENDOR_RAMDISK_MODULES := true
+BOARD_DO_NOT_STRIP_RECOVERY_MODULES := true
 
 # Recovery
 # The Unisoc LK bootloader on this device understands vendor_boot v4 ramdisk
@@ -133,6 +134,17 @@ BOARD_MOVE_GSI_AVB_KEYS_TO_VENDOR_BOOT := true
 BOARD_RAMDISK_USE_LZ4 := true
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/recovery.fstab
 TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888
+
+# Kernel modules for the RECOVERY fragment.
+# LK boots recovery from the RECOVERY ramdisk instead of the platform one, so
+# that fragment must carry the storage drivers itself: without /lib/modules in
+# it, first-stage init cannot load ufs-sprd_qogirl6.ko and recovery would start
+# with no block devices at all (the same failure mode that produced the
+# "partition(s) not found ... metadata, super, tranfs" panic on the platform
+# ramdisk). The recovery build installs these into
+# $(TARGET_RECOVERY_ROOT_OUT)/lib/modules together with modules.load.recovery.
+BOARD_RECOVERY_KERNEL_MODULES := $(BOARD_VENDOR_RAMDISK_KERNEL_MODULES)
+BOARD_RECOVERY_KERNEL_MODULES_LOAD := $(BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD)
 
 # Partitions
 # Every dynamic partition gets its own image, so the copy-out paths must point

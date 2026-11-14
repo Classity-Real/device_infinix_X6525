@@ -324,3 +324,29 @@ contributes for this flow.
   without a matching vbmeta. `vbmeta` is also absent from `AB_OTA_PARTITIONS`,
   so the OTA payload carries no vbmeta image and leaves the device's vbmeta
   partition untouched.
+
+## Credits
+
+The boot flow of this tree follows the work published in
+[`Seuj09/android_device_infinix_X6525`](https://github.com/Seuj09/android_device_infinix_X6525)
+(release `v20.0-20261114-debug`), whose images were used as the known-good
+reference while debugging the first-stage failures on this device:
+
+* the `vendor_boot` layout with a PLATFORM fragment plus a separate
+  `type=RECOVERY` fragment for LineageOS Recovery
+  (`BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT`,
+  `BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT`)
+* the first-stage toolset in `/first_stage_ramdisk/system/`
+  (`launch_with_vendor_ramdisk.mk`: `linker64`, `e2fsck`, `fsck.f2fs`,
+  `resize2fs`, `tune2fs`, `snapuserd`)
+* the observation that LK concatenates the DTB `/chosen/bootargs` with the
+  `vendor_boot` header cmdline, and the `enforcing=0` bring-up flag
+* the recovery side module wiring (`BOARD_RECOVERY_KERNEL_MODULES`,
+  `BOARD_RECOVERY_KERNEL_MODULES_LOAD`,
+  `BOARD_DO_NOT_STRIP_RECOVERY_MODULES`) that lets the RECOVERY fragment load
+  the storage drivers on its own
+
+The recovery touch firmware and the extra touchscreen modules that the reference
+tree copies from `prebuilts/{firmware,recovery_modules}` are not part of its
+public repository (they are extracted from the device dump), so they are not
+shipped here; recovery works without them, but its touchscreen may not.

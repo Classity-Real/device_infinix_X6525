@@ -18,6 +18,12 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
 # never looks for them.
 $(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota/launch_with_vendor_ramdisk.mk)
 
+# The stock vendor.prop enables Virtual A/B compression, and the tree ships
+# snapuserd.vendor_ramdisk, so advertise it in the OTA metadata as well. Without
+# this, misc_info.txt says virtual_ab_compression=false while the device expects
+# compressed COW ops for the next OTA.
+PRODUCT_VIRTUAL_AB_COMPRESSION := true
+
 # Userspace snapshots
 #
 # The stock vendor.prop sets ro.virtual_ab.compression.enabled=true and
@@ -117,6 +123,14 @@ PRODUCT_COPY_FILES += $(foreach name,$(RECOVERY_INIT_RC_NAMES), \
     $(LOCAL_PATH)/rootdir/etc/fstab.X6525:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.$(name))
 PRODUCT_COPY_FILES += $(foreach name,$(RECOVERY_INIT_RC_NAMES), \
     $(LOCAL_PATH)/rootdir/etc/ueventd.X6525.rc:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/ueventd.$(name).rc)
+
+# The recovery fragment boots on its own, so it needs the same first-stage
+# fstab and the full module load list at the paths recovery's init reads:
+# /first_stage_ramdisk/fstab.${ro.hardware} for fs_mgr and /lib/modules for the
+# storage drivers that BOARD_RECOVERY_KERNEL_MODULES installs.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/etc/fstab.X6525:$(TARGET_COPY_OUT_RECOVERY)/root/first_stage_ramdisk/fstab.X6525 \
+    $(LOCAL_PATH)/prebuilts/modules/vendor_ramdisk/modules.load:$(TARGET_COPY_OUT_RECOVERY)/root/lib/modules/modules.load
 
 # Recovery init script: switches recovery to the configfs USB gadget, see the
 # file for why. It has to live at the root of the recovery ramdisk, where
