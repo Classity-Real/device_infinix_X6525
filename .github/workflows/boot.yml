@@ -64,7 +64,7 @@ jobs:
             git gnupg gperf imagemagick libelf-dev liblz4-tool libncurses-dev \
             libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush \
             rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 \
-            python-is-python3 || true
+            python-is-python3 device-tree-compiler || true
           sudo apt-get install -y --no-install-recommends \
             lib32ncurses-dev lib32readline-dev lib32z1-dev || true
           if ! sudo apt-get install -y --no-install-recommends \
@@ -109,6 +109,19 @@ jobs:
           repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle --no-tags \
             || repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle --no-tags
           df -h /
+
+      - name: Patch the DTB kernel command line
+        run: |
+          # The Unisoc LK bootloader takes the kernel command line from
+          # /chosen/bootargs of the DTB in vendor_boot.img and ignores
+          # boot.img's cmdline, so BOARD_KERNEL_CMDLINE has no effect. Add the
+          # bring-up options here, at build time, instead of editing images.
+          python3 lineage/device/infinix/X6525/tools/dtb_bootargs.py \
+            lineage/device/infinix/X6525/prebuilts/dtb/dtb.dtb \
+            --drop loglevel=1 \
+            --add loglevel=7 \
+            --add ignore_loglevel \
+            --add androidboot.selinux=permissive
 
       - name: Build boot images
         working-directory: lineage

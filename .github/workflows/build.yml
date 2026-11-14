@@ -56,7 +56,7 @@ jobs:
             git gnupg gperf imagemagick libelf-dev liblz4-tool libncurses-dev \
             libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush \
             rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 \
-            python-is-python3 || true
+            python-is-python3 device-tree-compiler || true
           # 32-bit libs are only needed for the legacy 32-bit tools; keep going
           # if this repository is unavailable on the runner image.
           sudo apt-get install -y --no-install-recommends \
@@ -123,6 +123,25 @@ jobs:
             || repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle --no-tags
           df -h /
 
+      - name: Patch the DTB kernel command line
+        run: |
+          # The Unisoc LK bootloader takes the kernel command line from
+          # /chosen/bootargs of the DTB in vendor_boot.img and ignores
+          # boot.img's cmdline, so BOARD_KERNEL_CMDLINE has no effect. Add the
+          # bring-up options here, at build time, instead of editing images.
+          #
+          # loglevel=1 (stock) hides every init message from the console, and
+          # the only capture channel the X6525 gives us after a failed boot is
+          # ramoops/pstore, which stores console output. Raise the level and
+          # force every printk to the console so init's LOG(FATAL) reason is
+          # recorded.
+          python3 lineage/device/infinix/X6525/tools/dtb_bootargs.py \
+            lineage/device/infinix/X6525/prebuilts/dtb/dtb.dtb \
+            --drop loglevel=1 \
+            --add loglevel=7 \
+            --add ignore_loglevel \
+            --add androidboot.selinux=permissive
+
       - name: Build
         working-directory: lineage
         run: |
@@ -139,60 +158,44 @@ jobs:
       # PRODUCT_COPY_FILES installs is not guaranteed (BOARD_RECOVERY_IMAGE_PREPARE
       # copies them again as the last step). Check the final image, not the
       # staging directories, and never fail the build here.
-      - name: Inspect recovery USB payload
+      - name: Inspect the built vendor_boot image
         if: always()
         working-directory: lineage
         run: |
-          out=out/target/product/X6525
-          echo "=== init.recovery.*.rc in recovery/root ==="
-          ls -l "$out"/recovery/root/init.recovery.*.rc 2>&1 || true
-          echo "=== recovery/root usbdebug.sh ==="
-          ls -l "$out"/recovery/root/system/etc/usbdebug.sh 2>&1 || true
-          echo "=== recovery/root/prop.default usb props ==="
-          grep -e 'recovery.usb' -e 'sys.usb' -e 'ro.debuggable=' \
-            "$out"/recovery/root/prop.default 2>&1 || true
-          echo "=== vendor_boot ramdisk contents (cpio names) ==="
-          ramdisk="$out"/obj/PACKAGING/vendor_boot_intermediates/vendor_ramdisk.cpio.lz4
-          if [ -f "$ramdisk" ]; then
-            ls -l "$ramdisk"
-            echo "lz4: $(command -v lz4 || echo 'not found')"
-            lz4 -dc "$ramdisk" > /tmp/vr.cpio 2>/tmp/vr.err && st=0 || st=$?
-            echo "decompress status: $st  size: $(stat -c%s /tmp/vr.cpio 2>/dev/null)"
-            head -c 200 /tmp/vr.err 2>/dev/null || true
-            head -c 6 /tmp/vr.cpio 2>/dev/null | od -c | head -2
-            echo "--- strings scan"
-            strings -a /tmp/vr.cpio 2>/dev/null | grep -a \
-              -e 'init\.recovery\.' -e 'usbdebug' -e 'modules\.load\.recovery' \
-              | sort -u | head -40 || true
-            echo "--- cpio parse"
-            python3 - /tmp/vr.cpio <<'PYX' || true
-          import sys
-          try:
-              d = open(sys.argv[1], 'rb').read()
-          except OSError as e:
-              print('cannot read cpio:', e)
-              raise SystemExit
-          i = 0
-          names = []
-          while i + 110 <= len(d) and d[i:i+6] in (b'070701', b'070702'):
-              def f(o):
-                  return int(d[i+o:i+o+8], 16)
-              size, nsz = f(54), f(94)
-              names.append(d[i+110:i+110+nsz-1].decode('utf-8', 'replace'))
-              i += 110 + nsz
-              i = (i + 3) & ~3
-              i += (size + 3) & ~3
-          print('cpio entries:', len(names))
-          for n in sorted(names):
-              if (n.startswith('init.recovery.') or n in (
-                      'system/etc/usbdebug.sh', 'system/bin/recovery',
-                      'lib/modules/modules.load.recovery')):
-                  print(n)
-          PYX
-          else
-            echo "missing $ramdisk"
-          fi
+          img=out/target/product/X6525/vendor_boot.img
+          ls -l "$img" 2>&1 || exit 0
+          python3 - "$img" <<'PYX' || true
+          import os, re, struct, subprocess, sys, tempfile
 
+          d = open(sys.argv[1], 'rb').read()
+          if d[:8] != b'VNDRBOOT':
+              print('not a vendor_boot image')
+              raise SystemExit
+          u32 = lambda o: struct.unpack_from('<I', d, o)[0]
+          page, vrs, dtbsz = u32(12), u32(24), u32(2100)
+          print('vendor cmdline:', d[28:2084].split(b'\0')[0].decode(errors='replace'))
+          rd = d[page:page + vrs]
+          off = page + (vrs + page - 1) // page * page
+          print('dtb bootargs:')
+          for s in re.findall(rb'[ -~]{20,}', d[off:off + dtbsz]):
+              t = s.decode()
+              if 'androidboot' in t or t.startswith('earlycon'):
+                  print('   ', t)
+          raw = os.path.join(tempfile.mkdtemp(), 'rd.cpio')
+          open(raw, 'wb').write(rd)
+          lz = subprocess.run(['lz4', '-dc', raw], capture_output=True)
+          if lz.returncode == 0:
+              open(raw, 'wb').write(lz.stdout)
+          names = subprocess.run(['cpio', '-it', '--quiet'], stdin=open(raw, 'rb'),
+                                 capture_output=True).stdout.decode(errors='replace').split()
+          mods = sorted(n for n in names if n.startswith('lib/modules/'))
+          print('ramdisk entries: %d, lib/modules entries: %d (expected 157 + 5)'
+                % (len(names), len(mods)))
+          for req in ('lib/modules/modules.load', 'lib/modules/modules.load.recovery',
+                      'lib/modules/ufs-sprd_qogirl6.ko', 'init.recovery.X6525.rc',
+                      'system/bin/recovery'):
+              print('   %-40s %s' % (req, 'ok' if req in names else 'MISSING'))
+          PYX
       - name: Collect images
         if: always()
         run: |
