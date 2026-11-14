@@ -1,0 +1,119 @@
+name: Inspect build artifact
+
+# Downloads an artifact produced by an earlier build run and prints the parts of
+# its filesystem layout we need for debugging (mainly /etc/selinux), so the
+# report can be read from the job log without pulling gigabytes locally.
+#
+# Trigger: `gh workflow run inspect-artifact.yml -R Classity-Real/device_infinix_X6525`
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Run id that produced the artifact'
+        required: true
+        default: '43547958227'
+      artifact:
+        description: 'Artifact name'
+        required: true
+        default: 'system-images-X6525-41'
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: inspect-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    runs-on: namespace-profile-workshop
+    timeout-minutes: 60
+
+    steps:
+      - name: Download artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p art
+          gh run download "${{ inputs.run_id }}" \
+            -R "${{ github.repository }}" \
+            -n "${{ inputs.artifact }}" -D art
+          echo "=== artifact contents ==="
+          find art -maxdepth 3 -printf '%10s %p\n' | sort -k2
+
+      - name: Dump selinux layout
+        run: |
+          set -x
+          sudo apt-get update -qq || true
+          sudo apt-get install -y -qq erofs-utils android-sdk-libsparse-utils || true
+          command -v simg2img || true
+          command -v fsck.erofs || true
+
+          mkdir -p sparse root
+          for f in $(find art -maxdepth 2 -name '*.img'); do
+            base=$(basename "$f")
+            cp -f "$f" "sparse/$base"
+            if command -v simg2img >/dev/null; then
+              simg2img "$f" "sparse/$base.raw" 2>/dev/null || cp -f "$f" "sparse/$base.raw"
+            else
+              cp -f "$f" "sparse/$base.raw"
+            fi
+            file "sparse/$base.raw"
+          done
+
+          for f in sparse/*.raw; do
+            name=$(basename "$f" .raw)
+            name=${name%.img}
+            out="root/$name"
+            mkdir -p "$out"
+            echo "===== $name ($(stat -c%s "$f") bytes)"
+            if sudo mount -o loop,ro -t erofs "$f" "$out" 2>/dev/null; then
+              echo "mounted erofs"
+            elif sudo mount -o loop,ro "$f" "$out" 2>/dev/null; then
+              echo "mounted auto"
+            elif command -v fsck.erofs >/dev/null && fsck.erofs --extract="$out" "$f" >/dev/null 2>&1; then
+              echo "extracted with fsck.erofs"
+            else
+              echo "could not read filesystem"
+              rmdir "$out" 2>/dev/null || true
+              continue
+            fi
+            echo "--- top level"
+            ls -la "$out" 2>/dev/null | head -40
+            if [ -d "$out/etc/selinux" ]; then
+              echo "--- etc/selinux"
+              find "$out/etc/selinux" -maxdepth 2 -printf '%10s %y %p\n' | sort -k3
+              for h in "$out"/etc/selinux/*.sha256 "$out"/etc/selinux/precompiled_sepolicy.*.sha256; do
+                [ -f "$h" ] && echo "SHA $(basename "$h"): $(cat "$h")"
+              done
+              [ -f "$out/etc/selinux/plat_sepolicy_vers.txt" ] && \
+                echo "plat_sepolicy_vers: $(cat "$out/etc/selinux/plat_sepolicy_vers.txt")"
+            fi
+            if [ -f "$out/bin/secilc" ] || [ -L "$out/bin/secilc" ]; then
+              ls -la "$out/bin/secilc"
+            else
+              echo "no /bin/secilc"
+            fi
+            ls -la "$out/bin/init" 2>/dev/null || true
+            for p in system_ext/etc/selinux product/etc/selinux vendor/etc/selinux odm/etc/selinux; do
+              if [ -d "$out/$p" ]; then
+                echo "--- $p"
+                find "$out/$p" -maxdepth 2 -printf '%10s %y %p\n' | sort -k3
+              fi
+            done
+            sudo umount "$out" 2>/dev/null || true
+          done
+
+      - name: Summarise
+        run: |
+          set -x
+          echo "=== precompiled policy candidates ==="
+          for p in root/*/etc/selinux/precompiled_sepolicy; do
+            [ -e "$p" ] && ls -l "$p"
+          done
+          echo "=== hashes on data side ==="
+          find root -path '*/etc/selinux/*sha256' -type f -printf '%p\n' | sort | while read -r h; do
+            echo "$h: $(cat "$h")"
+          done
