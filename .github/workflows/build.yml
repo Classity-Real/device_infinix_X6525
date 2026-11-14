@@ -52,9 +52,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            bc bison build-essential ccache curl flex g++-multilib gcc-multilib \
+            bc bison build-essential ccache cpio curl flex g++-multilib gcc-multilib \
             git gnupg gperf imagemagick libelf-dev liblz4-tool libncurses-dev \
-            libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush \
+            libsdl1.2-dev libssl-dev libxml2 libxml2-utils lz4 lzop pngcrush \
             rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 \
             python-is-python3 device-tree-compiler || true
           # 32-bit libs are only needed for the legacy 32-bit tools; keep going
@@ -166,7 +166,16 @@ jobs:
           img=out/target/product/X6525/vendor_boot.img
           ls -l "$img" 2>&1 || exit 0
           python3 - "$img" <<'PYX' || true
-          import os, re, struct, subprocess, sys, tempfile
+          import os, re, shutil, struct, subprocess, sys, tempfile
+
+          # This job does not need the Android build's host tools, but the
+          # ramdisk listing needs lz4 + cpio from the distro. Fail loudly and
+          # with a hint instead of a bare traceback: the step is `|| true`, so a
+          # silent exception would look like a shorter fragment listing.
+          for tool in ('lz4', 'cpio'):
+              if not shutil.which(tool):
+                  print('::warning::%s is not installed; cannot list ramdisk entries' % tool)
+                  raise SystemExit(0)
 
           d = open(sys.argv[1], 'rb').read()
           if d[:8] != b'VNDRBOOT':
