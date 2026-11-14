@@ -132,3 +132,63 @@ jobs:
                 "$top/build.prop" 2>/dev/null | head -30
             fi
           done
+
+      # Boot images are not filesystems: they are ANDROID!/VNDRBOOT containers
+      # with a (compressed) cpio ramdisk and, for vendor_boot, a DTB whose
+      # /chosen/bootargs is the kernel command line the Unisoc LK actually uses.
+      - name: Dump boot images
+        run: |
+          sudo apt-get install -y -qq lz4 cpio || true
+          python3 - <<'PYX'
+          import glob, os, re, struct, subprocess, tempfile
+
+          def u32(d, o):
+              return struct.unpack_from('<I', d, o)[0]
+
+          for f in sorted(glob.glob('art/*.img')):
+              if open(f, 'rb').read(8) != b'VNDRBOOT':
+                  continue
+              d = open(f, 'rb').read()
+              page = u32(d, 12)
+              vrs = u32(d, 24)
+              cmd = d[28:2084].split(b'\0')[0].decode(errors='replace')
+              dtbsz = u32(d, 2100)
+              bcs = u32(d, 2124)
+              print('=====', os.path.basename(f))
+              print('--- vendor cmdline:', repr(cmd))
+              print('--- sizeof ramdisk=%d dtb=%d bootconfig=%d' % (vrs, dtbsz, bcs))
+              rd = d[page:page + vrs]
+              off = page + (vrs + page - 1) // page * page
+              dtb = d[off:off + dtbsz]
+              print('--- dtb bootargs candidates')
+              for s in re.findall(rb'[ -~]{20,}', dtb):
+                  t = s.decode()
+                  if 'androidboot' in t or t.startswith('earlycon'):
+                      print('   ', t)
+              if not rd:
+                  continue
+              tmp = tempfile.mkdtemp()
+              raw = os.path.join(tmp, 'rd.cpio')
+              with open(raw, 'wb') as fh:
+                  fh.write(rd)
+              lz = subprocess.run(['lz4', '-dc', raw], capture_output=True)
+              if lz.returncode == 0:
+                  open(raw, 'wb').write(lz.stdout)
+              else:
+                  print('--- not lz4, first bytes', rd[:4].hex())
+              listing = subprocess.run(['cpio', '-it', '--quiet'],
+                                       stdin=open(raw, 'rb'),
+                                       capture_output=True).stdout.decode(errors='replace')
+              names = [n for n in listing.splitlines() if n]
+              mods = [n for n in names if 'lib/modules' in n or 'modules.load' in n]
+              print('--- cpio entries: %d  module entries: %d' % (len(names), len(mods)))
+              for n in sorted(mods)[:20]:
+                  print('   ', n)
+              for name in ('lib/modules/modules.load',
+                           'lib/modules/modules.load.recovery'):
+                  if name in names:
+                      r = subprocess.run(['cpio', '-i', '--quiet', '--to-stdout', name],
+                                         stdin=open(raw, 'rb'), capture_output=True)
+                      print('    --- %s: %r' % (name, r.stdout.decode(
+                          errors='replace').strip()[:400]))
+          PYX
