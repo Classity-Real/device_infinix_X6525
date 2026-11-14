@@ -61,6 +61,16 @@ jobs:
           fi
           echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
           echo "artifact-name=$name" >> "$GITHUB_OUTPUT"
+          # Same for the side artifacts: their names carry the build number, so
+          # ask the API instead of parsing it out of the ROM artifact name.
+          for prefix in boot-images-X6525 system-images-X6525; do
+            side=$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" \
+              --jq "[.artifacts[] | select(.expired == false and (.name | startswith(\"$prefix-\")))][0].name")
+            case "$side" in null) side="" ;; esac
+            key="${prefix%%-*}"
+            echo "${key}-artifact=${side:-}" >> "$GITHUB_OUTPUT"
+            echo "found ${key} artifact: ${side:-none}"
+          done
           echo "Publishing $name from run $run_id"
 
       - name: Download artifact from the Build run
@@ -86,4 +96,30 @@ jobs:
           compression-level: 0
           retention-days: 30
           if-no-files-found: error
+          overwrite: true
+
+      # The two side artifacts are what actually get flashed (boot/vendor_boot/
+      # dtbo from boot-images, the super raws from system-images), so mirror them
+      # too instead of leaving them on GitHub's artifact storage only. Their
+      # names already carry the build number, so they never collide across runs.
+      - name: Upload boot images to Namespace artifacts
+        if: steps.resolve.outputs.boot-artifact != ''
+        uses: namespace-actions/upload-artifact@v1
+        with:
+          name: ${{ steps.resolve.outputs.boot-artifact }}
+          path: artifact/${{ steps.resolve.outputs.boot-artifact }}
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: warn
+          overwrite: true
+
+      - name: Upload system images to Namespace artifacts
+        if: steps.resolve.outputs.system-artifact != ''
+        uses: namespace-actions/upload-artifact@v1
+        with:
+          name: ${{ steps.resolve.outputs.system-artifact }}
+          path: artifact/${{ steps.resolve.outputs.system-artifact }}
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: warn
           overwrite: true
