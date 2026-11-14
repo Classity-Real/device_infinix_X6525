@@ -316,3 +316,6 @@ contributes for this flow.
   applies to the recovery fstab.
   Bootloader-side verification is left to the user: the device's vbmeta is
   already disabled, so the testkey-signed boot/vendor_boot/dtbo are accepted
+  without a matching vbmeta. `vbmeta` is also absent from `AB_OTA_PARTITIONS`,
+  so the OTA payload carries no vbmeta image and leaves the device's vbmeta
+  partition untouched.

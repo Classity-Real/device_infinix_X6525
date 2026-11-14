@@ -7,6 +7,11 @@ DEVICE_PATH := device/infinix/X6525
 
 # A/B
 AB_OTA_UPDATER := true
+# vbmeta is deliberately not an OTA partition: the device's verification state
+# is managed on the device, and this tree does not build a vbmeta.img to write
+# over it. Leaving it in the list makes add_img_to_target_files() generate a
+# testkey vbmeta and put it into the OTA payload, which would replace whatever
+# verification setup the device currently has.
 AB_OTA_PARTITIONS += \
     boot \
     dtbo \
@@ -14,7 +19,6 @@ AB_OTA_PARTITIONS += \
     product \
     system \
     system_ext \
-    vbmeta \
     vendor \
     vendor_boot \
     vendor_dlkm
@@ -188,7 +192,9 @@ VENDOR_SECURITY_PATCH := 2024-05-05
 # boot/vendor_boot/dtbo are hash-footered with the AOSP testkey. Bootloader-side
 # verification is disabled on the device separately (the stock vbmeta has
 # Flags: 0 and chains those three partitions to Transsion keys, so a stock
-# vbmeta would reject our images); this tree does not ship a vbmeta.img.
+# vbmeta would reject our images); this tree does not ship a vbmeta.img, and
+# vbmeta is not in AB_OTA_PARTITIONS either, so the OTA payload leaves the
+# device's vbmeta partition untouched.
 # dm-verity for the dynamic partitions is disabled in the first-stage fstab,
 # see rootdir/etc/fstab.X6525.
 BOARD_AVB_ENABLE := true
