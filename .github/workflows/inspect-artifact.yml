@@ -1,8 +1,9 @@
 name: Inspect build artifact
 
 # Downloads an artifact produced by an earlier build run and prints the parts of
-# its filesystem layout we need for debugging (mainly /etc/selinux), so the
-# report can be read from the job log without pulling gigabytes locally.
+# its filesystem layout we need for debugging (mainly /etc/selinux and the
+# first/second-stage init inputs), so the report can be read from the job log
+# without pulling gigabytes locally.
 #
 # Trigger: `gh workflow run inspect-artifact.yml -R Classity-Real/device_infinix_X6525`
 
@@ -17,6 +18,10 @@ on:
         description: 'Artifact name'
         required: true
         default: 'system-images-X6525-41'
+      partition:
+        description: 'Image to inspect (system, vendor, odm, ... or all)'
+        required: true
+        default: 'all'
 
 permissions:
   actions: read
@@ -43,77 +48,87 @@ jobs:
           echo "=== artifact contents ==="
           find art -maxdepth 3 -printf '%10s %p\n' | sort -k2
 
-      - name: Dump selinux layout
+      - name: Dump layout
         run: |
-          set -x
           sudo apt-get update -qq || true
-          sudo apt-get install -y -qq erofs-utils android-sdk-libsparse-utils || true
-          command -v simg2img || true
-          command -v fsck.erofs || true
+          sudo apt-get install -y -qq erofs-utils android-sdk-libsparse-utils unzip || true
 
-          mkdir -p sparse root
+          want="${{ inputs.partition }}"
+          mkdir -p root
           for f in $(find art -maxdepth 2 -name '*.img'); do
-            base=$(basename "$f")
-            cp -f "$f" "sparse/$base"
-            if command -v simg2img >/dev/null; then
-              simg2img "$f" "sparse/$base.raw" 2>/dev/null || cp -f "$f" "sparse/$base.raw"
-            else
-              cp -f "$f" "sparse/$base.raw"
-            fi
-            file "sparse/$base.raw"
-          done
-
-          for f in sparse/*.raw; do
-            name=$(basename "$f" .raw)
-            name=${name%.img}
-            out="root/$name"
-            mkdir -p "$out"
-            echo "===== $name ($(stat -c%s "$f") bytes)"
-            if sudo mount -o loop,ro -t erofs "$f" "$out" 2>/dev/null; then
-              echo "mounted erofs"
-            elif sudo mount -o loop,ro "$f" "$out" 2>/dev/null; then
-              echo "mounted auto"
-            elif command -v fsck.erofs >/dev/null && fsck.erofs --extract="$out" "$f" >/dev/null 2>&1; then
-              echo "extracted with fsck.erofs"
-            else
-              echo "could not read filesystem"
-              rmdir "$out" 2>/dev/null || true
+            name=$(basename "$f" .img)
+            if [ "$want" != all ] && [ "$want" != "$name" ]; then
               continue
             fi
+
+            raw="$f.raw"
+            simg2img "$f" "$raw" 2>/dev/null || cp -f "$f" "$raw"
+
+            out="root/$name"
+            mkdir -p "$out"
+            echo "===== $name ($(stat -c%s "$raw") bytes)"
+            if ! fsck.erofs --extract="$out" "$raw" >/dev/null 2>&1; then
+              echo "could not extract filesystem"
+              continue
+            fi
+            # system.img is the whole root dir; the partition contents live in
+            # its system/ subdirectory. Other partitions are rooted directly.
+            top="$out"
+            [ -d "$out/system" ] && top="$out/system"
+            echo "--- using $top as partition root"
+
             echo "--- top level"
-            ls -la "$out" 2>/dev/null | head -40
-            if [ -d "$out/etc/selinux" ]; then
+            ls -la "$top" | head -40
+            echo "--- bin/{init,secilc,apexd,linker64}"
+            ls -l "$top/bin/init" "$top/bin/secilc" "$top/bin/apexd" "$top/bin/linker64" 2>&1
+            if [ -d "$top/bin/bootstrap" ]; then
+              echo "--- bin/bootstrap"
+              ls -la "$top/bin/bootstrap" | head -20
+            fi
+            if [ -d "$top/etc/selinux" ]; then
               echo "--- etc/selinux"
-              find "$out/etc/selinux" -maxdepth 2 -printf '%10s %y %p\n' | sort -k3
-              for h in "$out"/etc/selinux/*.sha256 "$out"/etc/selinux/precompiled_sepolicy.*.sha256; do
+              find "$top/etc/selinux" -maxdepth 2 -printf '%10s %y %p\n' | sort -k3
+              if [ -d "$top/etc/selinux/apex" ]; then
+                echo "--- etc/selinux/apex"
+                ls -la "$top/etc/selinux/apex"
+                for z in "$top"/etc/selinux/apex/*.zip; do
+                  [ -f "$z" ] && { echo "--- unzip -l $(basename "$z")"; unzip -l "$z"; }
+                done
+              fi
+              for h in "$top"/etc/selinux/*.sha256; do
                 [ -f "$h" ] && echo "SHA $(basename "$h"): $(cat "$h")"
               done
-              [ -f "$out/etc/selinux/plat_sepolicy_vers.txt" ] && \
-                echo "plat_sepolicy_vers: $(cat "$out/etc/selinux/plat_sepolicy_vers.txt")"
+              [ -f "$top/etc/selinux/plat_sepolicy_vers.txt" ] && \
+                echo "plat_sepolicy_vers: $(cat "$top/etc/selinux/plat_sepolicy_vers.txt")"
+              ls -la "$top/etc/selinux/mapping" 2>/dev/null
             fi
-            if [ -f "$out/bin/secilc" ] || [ -L "$out/bin/secilc" ]; then
-              ls -la "$out/bin/secilc"
+            if [ -f "$top/etc/selinux/precompiled_sepolicy" ]; then
+              echo "--- precompiled_sepolicy"
+              ls -l "$top/etc/selinux/precompiled_sepolicy"
+              for h in "$top"/etc/selinux/precompiled_sepolicy.*.sha256; do
+                [ -f "$h" ] && echo "PRECOMP $(basename "$h"): $(cat "$h")"
+              done
+            fi
+            if [ -d "$top/etc/init/hw" ]; then
+              echo "--- etc/init/hw"
+              ls "$top/etc/init/hw"
+              echo "--- init.rc imports"
+              grep -n '^import' "$top/etc/init/hw/init.rc" 2>/dev/null
             else
-              echo "no /bin/secilc"
+              echo "--- no etc/init/hw"
+              ls "$top/etc/init" 2>/dev/null | head -20
             fi
-            ls -la "$out/bin/init" 2>/dev/null || true
-            for p in system_ext/etc/selinux product/etc/selinux vendor/etc/selinux odm/etc/selinux; do
-              if [ -d "$out/$p" ]; then
-                echo "--- $p"
-                find "$out/$p" -maxdepth 2 -printf '%10s %y %p\n' | sort -k3
-              fi
-            done
-            sudo umount "$out" 2>/dev/null || true
-          done
-
-      - name: Summarise
-        run: |
-          set -x
-          echo "=== precompiled policy candidates ==="
-          for p in root/*/etc/selinux/precompiled_sepolicy; do
-            [ -e "$p" ] && ls -l "$p"
-          done
-          echo "=== hashes on data side ==="
-          find root -path '*/etc/selinux/*sha256' -type f -printf '%p\n' | sort | while read -r h; do
-            echo "$h: $(cat "$h")"
+            if [ -d "$top/apex" ]; then
+              echo "--- apex (count): $(ls "$top"/apex/*.apex 2>/dev/null | wc -l)"
+              ls -la "$top/apex" | head -30
+            fi
+            if [ -f "$top/system/build.prop" ]; then
+              echo "--- build.prop (selected)"
+              grep -E '^ro\.(vndk|build\.(version\.release|version\.sdk|type|fingerprint|date)|product\.device|hardware|debuggable|secure|adb\.secure)' \
+                "$top/system/build.prop" 2>/dev/null | head -30
+            elif [ -f "$top/build.prop" ]; then
+              echo "--- build.prop (selected)"
+              grep -E '^ro\.(vndk|build\.(version\.release|version\.sdk|type|fingerprint|date)|product\.device|hardware|debuggable|secure|adb\.secure)' \
+                "$top/build.prop" 2>/dev/null | head -30
+            fi
           done
