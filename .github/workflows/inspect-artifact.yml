@@ -165,30 +165,44 @@ jobs:
                   t = s.decode()
                   if 'androidboot' in t or t.startswith('earlycon'):
                       print('   ', t)
-              if not rd:
-                  continue
-              tmp = tempfile.mkdtemp()
-              raw = os.path.join(tmp, 'rd.cpio')
-              with open(raw, 'wb') as fh:
-                  fh.write(rd)
-              lz = subprocess.run(['lz4', '-dc', raw], capture_output=True)
-              if lz.returncode == 0:
-                  open(raw, 'wb').write(lz.stdout)
-              else:
-                  print('--- not lz4, first bytes', rd[:4].hex())
-              listing = subprocess.run(['cpio', '-it', '--quiet'],
-                                       stdin=open(raw, 'rb'),
-                                       capture_output=True).stdout.decode(errors='replace')
-              names = [n for n in listing.splitlines() if n]
-              mods = [n for n in names if 'lib/modules' in n or 'modules.load' in n]
-              print('--- cpio entries: %d  module entries: %d' % (len(names), len(mods)))
-              for n in sorted(mods)[:20]:
-                  print('   ', n)
-              for name in ('lib/modules/modules.load',
-                           'lib/modules/modules.load.recovery'):
-                  if name in names:
-                      r = subprocess.run(['cpio', '-i', '--quiet', '--to-stdout', name],
-                                         stdin=open(raw, 'rb'), capture_output=True)
-                      print('    --- %s: %r' % (name, r.stdout.decode(
-                          errors='replace').strip()[:400]))
+              ents, esz = u32(d, 2116), u32(d, 2120)
+              tbl = off + (dtbsz + page - 1) // page * page
+              types = {1: 'PLATFORM', 2: 'RECOVERY'}
+              frags = [('platform', rd, 0)]
+              if ents:
+                  frags = []
+                  for i in range(ents):
+                      e = tbl + i * esz
+                      sz, fo, typ = struct.unpack_from('<III', d, e)
+                      nm = d[e + 12:e + 44].split(b'\0')[0].decode(errors='replace')
+                      frags.append(('%s%s' % (types.get(typ, typ),
+                                              '/%s' % nm if nm else ''), rd[fo:fo + sz], i))
+              for label, frag, _ in frags:
+                  if not frag:
+                      continue
+                  print('--- fragment %s: %d bytes' % (label, len(frag)))
+                  tmp = tempfile.mkdtemp()
+                  raw = os.path.join(tmp, 'rd.cpio')
+                  with open(raw, 'wb') as fh:
+                      fh.write(frag)
+                  lz = subprocess.run(['lz4', '-dc', raw], capture_output=True)
+                  if lz.returncode == 0:
+                      open(raw, 'wb').write(lz.stdout)
+                  else:
+                      print('    not lz4, first bytes', frag[:4].hex())
+                  listing = subprocess.run(['cpio', '-it', '--quiet'],
+                                           stdin=open(raw, 'rb'),
+                                           capture_output=True).stdout.decode(errors='replace')
+                  names = [n for n in listing.splitlines() if n]
+                  mods = [n for n in names if 'lib/modules' in n or 'modules.load' in n]
+                  print('    cpio entries: %d  module entries: %d' % (len(names), len(mods)))
+                  for n in sorted(mods)[:20]:
+                      print('   ', n)
+                  for name in ('lib/modules/modules.load',
+                               'lib/modules/modules.load.recovery'):
+                      if name in names:
+                          r = subprocess.run(['cpio', '-i', '--quiet', '--to-stdout', name],
+                                             stdin=open(raw, 'rb'), capture_output=True)
+                          print('    --- %s: %r' % (name, r.stdout.decode(
+                              errors='replace').strip()[:400]))
           PYX

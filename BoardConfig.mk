@@ -79,7 +79,13 @@ BOARD_DTB_OFFSET := 0x01f00000
 # stock Transsion policy while the platform side is LineageOS, so an early
 # denial can abort a boot that would otherwise work. Remove it once the ROM
 # boots and the denials have been added to sepolicy.
-BOARD_KERNEL_CMDLINE := console=ttyS1,115200n8 androidboot.selinux=permissive
+#
+# This is the vendor_boot header cmdline (mkbootimg --vendor_cmdline), not a
+# boot.img cmdline: LK reads /chosen/bootargs from the DTB and then appends this
+# string to it (verified in the saved last_kmsg, where both appeared in the same
+# kernel command line). enforcing=0 mirrors the reference tree; it stops LK from
+# forcing enforcing=1 on top of androidboot.selinux=permissive.
+BOARD_KERNEL_CMDLINE := console=ttyS1,115200n8 androidboot.selinux=permissive enforcing=0
 BOARD_KERNEL_IMAGE_NAME := Image
 
 TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilts/kernel
@@ -110,23 +116,19 @@ BOARD_DO_NOT_STRIP_VENDOR_MODULES := true
 BOARD_DO_NOT_STRIP_VENDOR_RAMDISK_MODULES := true
 
 # Recovery
-# The Unisoc bootloader only loads a single vendor ramdisk: the stock
-# vendor_boot.img has exactly one table entry (type PLATFORM, empty name) and
-# that ramdisk contains both the normal boot files and the recovery overlay
-# (/system/bin/recovery, init.rc with the recovery service, recovery.fstab).
-# Ramdisk fragments are not understood, so a separate RECOVERY fragment (which
-# is what BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT creates) is never
-# loaded and recovery never starts.
+# The Unisoc LK bootloader on this device understands vendor_boot v4 ramdisk
+# fragments. The reference LineageOS 20 vendor_boot for this exact device ships
+# vendor_ramdisk00 (type PLATFORM) plus a vendor_ramdisk01 fragment tagged
+# RECOVERY, and boots recovery from the latter when misc/BCB requests it. So the
+# fragment layout is supported here; do not merge the recovery root into the
+# platform ramdisk.
 #
-# With BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := false the build merges
-# TARGET_RECOVERY_ROOT_OUT into the platform vendor ramdisk (mkbootfs is run
-# with both directories, see build/make/core/Makefile). That reproduces the
-# stock layout: first-stage init sees /system/bin/recovery and enters recovery
-# when the bootloader does not pass androidboot.force_normal_boot=1, while a
-# normal boot still switches root to /first_stage_ramdisk and hides the overlay.
-TARGET_NO_RECOVERY := true
+# BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT builds the recovery resources
+# without producing a recovery.img (there is no recovery partition), and
+# BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT packs TARGET_RECOVERY_ROOT_OUT
+# as that separate RECOVERY fragment (build/make/core/Makefile).
 BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
-BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := false
+BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true
 BOARD_MOVE_GSI_AVB_KEYS_TO_VENDOR_BOOT := true
 BOARD_RAMDISK_USE_LZ4 := true
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/recovery.fstab

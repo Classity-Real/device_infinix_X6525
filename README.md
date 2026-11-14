@@ -56,28 +56,27 @@ mka bootimage vendorbootimage superimage_empty \
 | Target | Output |
 |---|---|
 | `bootimage` | `boot.img` (stock kernel, generic ramdisk) |
-| `vendorbootimage` | `vendor_boot.img` (DTB + vendor ramdisk, recovery overlay included) |
+| `vendorbootimage` | `vendor_boot.img` (DTB + platform ramdisk + RECOVERY fragment) |
 | `out/target/product/X6525/dtbo.img` | `dtbo.img` |
 | `superimage_empty` | `super_empty.img` |
 
-`recovery.img` does not exist for this device: `TARGET_NO_RECOVERY := true` and
-`BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true`, so the Lineage recovery
-resources are merged into the *platform* ramdisk of `vendor_boot.img`.
+`recovery.img` does not exist for this device: there is no recovery partition and
+`BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true` builds the recovery
+resources without packaging a standalone image. With
+`BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true` they are packed as a
+second, `--ramdisk_type RECOVERY` fragment of `vendor_boot.img`, next to the
+platform ramdisk.
 
-`BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT` is deliberately `false`. Setting
-it to `true` puts recovery in a separate RECOVERY ramdisk fragment (`--ramdisk_type
-RECOVERY`), but the Unisoc bootloader does not select fragments: the stock
-`vendor_boot.img` has a single PLATFORM entry (empty name) that already contains
-`/system/bin/recovery` and the recovery init files. First-stage init implements
-the same rule as stock - it enters recovery when
-`androidboot.force_normal_boot=1` is *not* set, and otherwise switches root to
-`/first_stage_ramdisk`, which hides the recovery overlay. Merging the resources
-into the platform ramdisk reproduces that layout, so the stock bootloader can
-boot either mode from one ramdisk.
+That layout is what the reference LineageOS 20 tree for this device ships (its
+`vendor_boot.img` has `vendor_ramdisk00` type PLATFORM plus `vendor_ramdisk01`
+type RECOVERY named `recovery`), and LK on this device boots recovery from that
+fragment. The platform ramdisk stays free of recovery files, so first-stage init
+and normal boot only ever see the files that belong to them.
 
 The recovery fstab is `rootdir/etc/recovery.fstab` (stock recovery.fstab sans
 `avb=`, plus `/data`, `/cache` and `/misc`); the first-stage fstab stays
-`rootdir/etc/fstab.X6525`.
+`rootdir/etc/fstab.X6525` and is installed under every board/project name the
+stock ramdisk ships one for.
 
 ### Recovery USB
 
@@ -198,26 +197,32 @@ stock. All read-only partitions use EROFS so they fit.
 Stock uses a GKI v4 split:
 
 * `boot.img` — prebuilt kernel + generic ramdisk, no DTB
-* `vendor_boot.img` — DTB + one platform ramdisk
-  (`type: 0x1`, empty name; stock has no ramdisk fragments)
+* `vendor_boot.img` — DTB + vendor ramdisk; stock has one PLATFORM entry
 
-`BOARD_KERNEL_CMDLINE` (`console=ttyS1,115200n8 androidboot.selinux=permissive`)
-is the `boot.img` cmdline; stock keeps `console=ttyS1,115200n8 buildvariant=user`
-in the `vendor_boot` cmdline instead. The bootloader concatenates both, so either
-placement reaches the kernel.
+This tree adds one more fragment: `vendor_ramdisk00` remains the platform
+ramdisk (first-stage fstab, prebuilt modules, fsck toolset, snapuserd) and
+`vendor_ramdisk01` is the Lineage recovery root (`BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT`,
+see *Boot and recovery images only*).
 
-The vendor ramdisk holds the prebuilt modules, the first-stage fstab and the
-Lineage recovery overlay (`TARGET_NO_RECOVERY := true`,
-`BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true`,
-`BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := false` — see *Boot and
-recovery images only* for why the recovery overlay must live in the platform
-ramdisk instead of a fragment).
+The kernel command line has two sources. LK takes `/chosen/bootargs` from the
+DTB in `vendor_boot.img` and then appends the `vendor_boot` header cmdline
+(`BOARD_KERNEL_CMDLINE`, `console=ttyS1,115200n8 androidboot.selinux=permissive
+enforcing=0`). A saved last_kmsg from this device shows both in the final
+`/proc/cmdline`, so the header cmdline is effective; the DTB is still patched at
+build time (`tools/dtb_bootargs.py`) because `loglevel` has to be raised before
+init starts.
 
-Recovery is entered when the bootloader reboots without
-`androidboot.force_normal_boot=1`: first-stage init finds `/system/bin/recovery`
-in the ramdisk and keeps it as root; on a normal boot it switches root to
-`/first_stage_ramdisk` and the overlay disappears. That is exactly what stock
-does.
+The platform ramdisk holds the prebuilt modules, the first-stage fstab and the
+first-stage toolset installed by
+`virtual_ab_ota/launch_with_vendor_ramdisk.mk` (`linker64`, `libc.so`,
+`e2fsck`, `fsck.f2fs`, `resize2fs`, `tune2fs` inside
+`/first_stage_ramdisk/system/`). Those are the binaries first-stage init can run
+after it switches root, so they must live in the vendor ramdisk and not in
+`boot.img`'s generic ramdisk.
+
+Recovery is entered when the bootloader selects the RECOVERY fragment after a
+`boot-recovery` BCB (misc); `bootable/recovery` then runs from that ramdisk.
+Normal boot uses the platform ramdisk as the vendor ramdisk.
 
 The stock `vendor.prop` enables virtual A/B compression and userspace snapshots
 (`ro.virtual_ab.compression.enabled` / `ro.virtual_ab.userspace.snapshots.enabled`),

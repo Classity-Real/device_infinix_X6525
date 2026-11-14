@@ -7,7 +7,16 @@
 $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
 
 # A/B
-$(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota.mk)
+#
+# launch_with_vendor_ramdisk is the variants that install the first-stage
+# toolset into the *vendor* ramdisk: linker.vendor_ramdisk, e2fsck.vendor_ramdisk,
+# fsck.f2fs.vendor_ramdisk, resize2fs.vendor_ramdisk and tune2fs.vendor_ramdisk.
+# They land in /first_stage_ramdisk/system/{bin,lib64}, which is the root
+# first-stage init chroots into (SwitchRoot), so they are the only dynamically
+# linked binaries that can run after the switch. The plain virtual_ab_ota.mk
+# installs the same tools into the boot ramdisk instead, where first-stage init
+# never looks for them.
+$(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota/launch_with_vendor_ramdisk.mk)
 
 # Userspace snapshots
 #

@@ -125,10 +125,12 @@ jobs:
 
       - name: Patch the DTB kernel command line
         run: |
-          # The Unisoc LK bootloader takes the kernel command line from
-          # /chosen/bootargs of the DTB in vendor_boot.img and ignores
-          # boot.img's cmdline, so BOARD_KERNEL_CMDLINE has no effect. Add the
-          # bring-up options here, at build time, instead of editing images.
+          # LK builds the kernel command line from /chosen/bootargs of the DTB
+          # in vendor_boot.img and then appends the vendor_boot header cmdline
+          # (BOARD_KERNEL_CMDLINE). The saved last_kmsg on the device shows both
+          # in one line, so BOARD_KERNEL_CMDLINE is effective; the DTB is still
+          # patched because it is the only place that can raise loglevel before
+          # init starts.
           #
           # loglevel=1 (stock) hides every init message from the console, and
           # the only capture channel the X6525 gives us after a failed boot is
@@ -153,11 +155,10 @@ jobs:
           # out/target/product/X6525.
           mka bacon vendorbootimage -j"$(nproc)"
 
-      # The recovery USB init script and the diagnostics script are merged into
-      # the vendor_boot ramdisk by a recipe whose ordering relative to the
-      # PRODUCT_COPY_FILES installs is not guaranteed (BOARD_RECOVERY_IMAGE_PREPARE
-      # copies them again as the last step). Check the final image, not the
-      # staging directories, and never fail the build here.
+      # Check the final image, not the staging directories, and never fail the
+      # build here. vendor_boot has two ramdisk fragments: the platform ramdisk
+      # (first-stage fstab, modules, fsck toolset, snapuserd) and the RECOVERY
+      # ramdisk (lineage recovery root).
       - name: Inspect the built vendor_boot image
         if: always()
         working-directory: lineage
@@ -173,28 +174,49 @@ jobs:
               raise SystemExit
           u32 = lambda o: struct.unpack_from('<I', d, o)[0]
           page, vrs, dtbsz = u32(12), u32(24), u32(2100)
+          ents, esz = u32(2116), u32(2120)
           print('vendor cmdline:', d[28:2084].split(b'\0')[0].decode(errors='replace'))
-          rd = d[page:page + vrs]
           off = page + (vrs + page - 1) // page * page
           print('dtb bootargs:')
           for s in re.findall(rb'[ -~]{20,}', d[off:off + dtbsz]):
               t = s.decode()
               if 'androidboot' in t or t.startswith('earlycon'):
                   print('   ', t)
-          raw = os.path.join(tempfile.mkdtemp(), 'rd.cpio')
-          open(raw, 'wb').write(rd)
-          lz = subprocess.run(['lz4', '-dc', raw], capture_output=True)
-          if lz.returncode == 0:
-              open(raw, 'wb').write(lz.stdout)
-          names = subprocess.run(['cpio', '-it', '--quiet'], stdin=open(raw, 'rb'),
-                                 capture_output=True).stdout.decode(errors='replace').split()
-          mods = sorted(n for n in names if n.startswith('lib/modules/'))
-          print('ramdisk entries: %d, lib/modules entries: %d (expected 157 + 5)'
-                % (len(names), len(mods)))
-          for req in ('lib/modules/modules.load', 'lib/modules/modules.load.recovery',
-                      'lib/modules/ufs-sprd_qogirl6.ko', 'init.recovery.X6525.rc',
-                      'system/bin/recovery'):
-              print('   %-40s %s' % (req, 'ok' if req in names else 'MISSING'))
+          tbl = off + (dtbsz + page - 1) // page * page
+          print('fragments:', ents)
+          types = {1: 'PLATFORM', 2: 'RECOVERY'}
+          frags = {}
+          for i in range(ents):
+              e = tbl + i * esz
+              sz, fo, typ = struct.unpack_from('<III', d, e)
+              name = d[e + 12:e + 44].split(b'\0')[0].decode(errors='replace')
+              print('  [%d] type=%s name=%r size=%d'
+                    % (i, types.get(typ, typ), name, sz))
+              raw = d[page + fo:page + fo + sz]
+              tmp = os.path.join(tempfile.mkdtemp(), 'f%d' % i)
+              open(tmp + '.lz4', 'wb').write(raw)
+              lz = subprocess.run(['lz4', '-dc', tmp + '.lz4'], capture_output=True)
+              open(tmp, 'wb').write(lz.stdout if lz.returncode == 0 else raw)
+              names = subprocess.run(['cpio', '-it', '--quiet'], stdin=open(tmp, 'rb'),
+                                     capture_output=True).stdout.decode(errors='replace').split()
+              frags[typ] = names
+              print('       entries: %d' % len(names))
+          plat = set(frags.get(1, []))
+          rec = set(frags.get(2, []))
+          print('platform ramdisk:')
+          for req in ('first_stage_ramdisk/fstab.X6525',
+                      'first_stage_ramdisk/system/bin/linker64',
+                      'first_stage_ramdisk/system/bin/e2fsck',
+                      'first_stage_ramdisk/system/bin/fsck.f2fs',
+                      'first_stage_ramdisk/system/bin/snapuserd',
+                      'lib/modules/modules.load',
+                      'lib/modules/modules.load.recovery',
+                      'lib/modules/ufs-sprd_qogirl6.ko'):
+              print('   %-52s %s' % (req, 'ok' if req in plat else 'MISSING'))
+          print('recovery ramdisk:')
+          for req in ('init.recovery.X6525.rc', 'system/bin/recovery',
+                      'system/etc/recovery.fstab', 'first_stage_ramdisk/fstab.X6525'):
+              print('   %-52s %s' % (req, 'ok' if req in rec else 'MISSING'))
           PYX
       - name: Collect images
         if: always()

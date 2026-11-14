@@ -1,14 +1,17 @@
 name: Build boot images (X6525)
 
 # Builds only the images that live outside the dynamic partitions: boot,
-# vendor_boot (which carries the Lineage recovery overlay), dtbo and
+# vendor_boot (which carries the Lineage recovery ramdisk fragment), dtbo and
 # super_empty. Useful while iterating on the kernel/boot flow, because it skips
 # system/system_ext/vendor/product/odm/vendor_dlkm entirely.
 #
-# The recovery overlay is merged into the platform ramdisk of vendor_boot.img
-# (TARGET_NO_RECOVERY := true, BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT :=
-# true, BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := false), so there is no
-# recovery.img to build.
+# vendor_boot.img carries two ramdisk fragments: the platform ramdisk
+# (BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT plus
+# BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT, which packs
+# TARGET_RECOVERY_ROOT_OUT as a separate type=RECOVERY fragment). There is no
+# recovery partition and no recovery.img; LK boots the RECOVERY fragment when
+# misc/BCB asks for recovery, which is how the reference LineageOS build for
+# this device ships LineageOS Recovery.
 #
 # Triggered manually: Actions -> "Build boot images (X6525)" -> Run workflow,
 # or `gh workflow run boot.yml -R Classity-Real/device_infinix_X6525`.
@@ -112,10 +115,11 @@ jobs:
 
       - name: Patch the DTB kernel command line
         run: |
-          # The Unisoc LK bootloader takes the kernel command line from
-          # /chosen/bootargs of the DTB in vendor_boot.img and ignores
-          # boot.img's cmdline, so BOARD_KERNEL_CMDLINE has no effect. Add the
-          # bring-up options here, at build time, instead of editing images.
+          # LK builds the kernel command line from /chosen/bootargs of the DTB
+          # in vendor_boot.img and then appends the vendor_boot header cmdline
+          # (BOARD_KERNEL_CMDLINE); the saved last_kmsg on the device shows both
+          # in one line. Patch the DTB only for the early loglevel, and leave
+          # androidboot.selinux to the header cmdline as well.
           python3 lineage/device/infinix/X6525/tools/dtb_bootargs.py \
             lineage/device/infinix/X6525/prebuilts/dtb/dtb.dtb \
             --drop loglevel=1 \
@@ -150,47 +154,44 @@ jobs:
           echo "=== recovery/root/prop.default usb props ==="
           grep -e 'recovery.usb' -e 'sys.usb' -e 'ro.debuggable=' \
             "$out"/recovery/root/prop.default 2>&1 || true
-          echo "=== vendor_boot ramdisk contents (cpio names) ==="
-          ramdisk="$out"/obj/PACKAGING/vendor_boot_intermediates/vendor_ramdisk.cpio.lz4
-          if [ -f "$ramdisk" ]; then
-            ls -l "$ramdisk"
-            echo "lz4: $(command -v lz4 || echo 'not found')"
-            lz4 -dc "$ramdisk" > /tmp/vr.cpio 2>/tmp/vr.err && st=0 || st=$?
-            echo "decompress status: $st  size: $(stat -c%s /tmp/vr.cpio 2>/dev/null)"
-            head -c 200 /tmp/vr.err 2>/dev/null || true
-            head -c 6 /tmp/vr.cpio 2>/dev/null | od -c | head -2
-            echo "--- strings scan"
-            strings -a /tmp/vr.cpio 2>/dev/null | grep -a \
-              -e 'init\.recovery\.' -e 'usbdebug' -e 'modules\.load\.recovery' \
-              | sort -u | head -40 || true
-            echo "--- cpio parse"
-            python3 - /tmp/vr.cpio <<'PYX' || true
-          import sys
-          try:
-              d = open(sys.argv[1], 'rb').read()
-          except OSError as e:
-              print('cannot read cpio:', e)
+          echo "=== vendor_boot ramdisk fragments ==="
+          img="$out/vendor_boot.img"
+          python3 - "$img" <<'PYX' || true
+          import os, struct, subprocess, sys, tempfile
+
+          d = open(sys.argv[1], 'rb').read()
+          if d[:8] != b'VNDRBOOT':
+              print('not a vendor_boot image')
               raise SystemExit
-          i = 0
-          names = []
-          while i + 110 <= len(d) and d[i:i+6] in (b'070701', b'070702'):
-              def f(o):
-                  return int(d[i+o:i+o+8], 16)
-              size, nsz = f(54), f(94)
-              names.append(d[i+110:i+110+nsz-1].decode('utf-8', 'replace'))
-              i += 110 + nsz
-              i = (i + 3) & ~3
-              i += (size + 3) & ~3
-          print('cpio entries:', len(names))
-          for n in sorted(names):
-              if (n.startswith('init.recovery.') or n in (
-                      'system/etc/usbdebug.sh', 'system/bin/recovery',
-                      'lib/modules/modules.load.recovery')):
-                  print(n)
+          u32 = lambda o: struct.unpack_from('<I', d, o)[0]
+          page, vrs, dtbsz = u32(12), u32(24), u32(2100)
+          ents, esz = u32(2116), u32(2120)
+          print('vendor cmdline:', d[28:2084].split(b'\0')[0].decode(errors='replace'))
+          off = page + (vrs + page - 1) // page * page
+          tbl = off + (dtbsz + page - 1) // page * page
+          types = {1: 'PLATFORM', 2: 'RECOVERY'}
+          for i in range(ents):
+              e = tbl + i * esz
+              sz, fo, typ = struct.unpack_from('<III', d, e)
+              print('fragment %d: type=%s size=%d' % (i, types.get(typ, typ), sz))
+              raw = d[page + fo:page + fo + sz]
+              tmp = os.path.join(tempfile.mkdtemp(), 'f%d' % i)
+              open(tmp + '.lz4', 'wb').write(raw)
+              lz = subprocess.run(['lz4', '-dc', tmp + '.lz4'], capture_output=True)
+              data = lz.stdout if lz.returncode == 0 else raw
+              open(tmp, 'wb').write(data)
+              names = subprocess.run(['cpio', '-it', '--quiet'], stdin=open(tmp, 'rb'),
+                                     capture_output=True).stdout.decode(errors='replace').split()
+              print('  entries: %d' % len(names))
+              for n in sorted(names):
+                  if (n.startswith('init.recovery.')
+                          or n in ('system/etc/usbdebug.sh', 'system/bin/recovery',
+                                   'first_stage_ramdisk/system/bin/e2fsck',
+                                   'first_stage_ramdisk/system/bin/fsck.f2fs',
+                                   'first_stage_ramdisk/system/bin/linker64',
+                                   'first_stage_ramdisk/system/bin/snapuserd')):
+                      print('   ', n)
           PYX
-          else
-            echo "missing $ramdisk"
-          fi
 
       - name: Collect boot images
         if: always()
