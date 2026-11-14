@@ -78,26 +78,15 @@ PRODUCT_PACKAGES += \
     init.cali.rc \
     init.zramwb.rc
 
-# Destinations are relative to $(PRODUCT_OUT), so use the TARGET_COPY_OUT_*
-# names rather than the absolute TARGET_*_OUT staging directories: absolute
-# destinations get mangled by append-path() and are silently never built.
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/etc/fstab.X6525:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.X6525 \
-    $(LOCAL_PATH)/rootdir/etc/ueventd.X6525.rc:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/ueventd.X6525.rc
-
-# Recovery init script: switches recovery to the configfs USB gadget, see the
-# file for why. It has to live at the root of the recovery ramdisk, where
-# bootable/recovery's init.rc imports it through
-# "import /init.recovery.${ro.hardware}.rc".
+# Every board/project name the stock vendor_boot ramdisk ships an
+# fstab/ueventd/init script for. The bootloader picks one of them at runtime as
+# ro.boot.hardware and neither that value nor the bootloader's own logic can be
+# read back from the images, so every first-stage file is installed under all of
+# them, exactly like the stock vendor ramdisk does.
 #
-# build/make/core/Makefile copies $(TARGET_ROOT_OUT)/init.recovery.*.rc into the
-# recovery ramdisk root, so the ramdisk root (TARGET_COPY_OUT_ROOT) is the
-# install location. ro.hardware is supplied by the bootloader and cannot be read
-# back on this device without a working USB connection, so the script is
-# installed under every board/project name the stock firmware ships an
-# init/ueventd script for (X6525 or one of the Unisoc ums9230 board names);
-# recovery only imports the matching one.
-# Every name the stock vendor_boot ramdisk ships an fstab/ueventd file for.
+# This is what makes first-stage init find a fstab at all: fs_mgr resolves it as
+# /fstab.${ro.boot.hardware} (or ${androidboot.fstab_suffix}), and if no file
+# matches, first-stage mount fails and init panics before the boot animation.
 # The path is captured with := because the prepare recipe below is expanded at
 # execution time, when LOCAL_PATH points at whatever makefile was parsed last.
 RECOVERY_USB_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
@@ -111,6 +100,27 @@ RECOVERY_INIT_RC_NAMES := \
     ums9230_4h10 ums9230_4h10_go \
     ums9230_6h10 ums9230_7h10 ums9230_haps ums9230_zebu \
     qogirl6 unknown
+
+# Destinations are relative to $(PRODUCT_OUT), so use the TARGET_COPY_OUT_*
+# names rather than the absolute TARGET_*_OUT staging directories: absolute
+# destinations get mangled by append-path() and are silently never built.
+PRODUCT_COPY_FILES += $(foreach name,$(RECOVERY_INIT_RC_NAMES), \
+    $(LOCAL_PATH)/rootdir/etc/fstab.X6525:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/first_stage_ramdisk/fstab.$(name))
+PRODUCT_COPY_FILES += $(foreach name,$(RECOVERY_INIT_RC_NAMES), \
+    $(LOCAL_PATH)/rootdir/etc/ueventd.X6525.rc:$(TARGET_COPY_OUT_VENDOR_RAMDISK)/ueventd.$(name).rc)
+
+# Recovery init script: switches recovery to the configfs USB gadget, see the
+# file for why. It has to live at the root of the recovery ramdisk, where
+# bootable/recovery's init.rc imports it through
+# "import /init.recovery.${ro.hardware}.rc".
+#
+# build/make/core/Makefile copies $(TARGET_ROOT_OUT)/init.recovery.*.rc into the
+# recovery ramdisk root, so the ramdisk root (TARGET_COPY_OUT_ROOT) is the
+# install location. ro.hardware is supplied by the bootloader and cannot be read
+# back on this device without a working USB connection, so the script is
+# installed under every board/project name the stock firmware ships an
+# init/ueventd script for (X6525 or one of the Unisoc ums9230 board names);
+# recovery only imports the matching one.
 $(foreach name,$(RECOVERY_INIT_RC_NAMES), \
     $(eval PRODUCT_COPY_FILES += $(LOCAL_PATH)/rootdir/etc/init.recovery.X6525.rc:$(TARGET_COPY_OUT_ROOT)/init.recovery.$(name).rc))
 
