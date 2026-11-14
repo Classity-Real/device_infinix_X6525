@@ -134,6 +134,65 @@ jobs:
           # out/target/product/X6525.
           mka bacon vendorbootimage -j"$(nproc)"
 
+      # The recovery USB init script and the diagnostics script are merged into
+      # the vendor_boot ramdisk by a recipe whose ordering relative to the
+      # PRODUCT_COPY_FILES installs is not guaranteed (BOARD_RECOVERY_IMAGE_PREPARE
+      # copies them again as the last step). Check the final image, not the
+      # staging directories, and never fail the build here.
+      - name: Inspect recovery USB payload
+        if: always()
+        working-directory: lineage
+        run: |
+          out=out/target/product/X6525
+          echo "=== init.recovery.*.rc in recovery/root ==="
+          ls -l "$out"/recovery/root/init.recovery.*.rc 2>&1 || true
+          echo "=== recovery/root usbdebug.sh ==="
+          ls -l "$out"/recovery/root/system/etc/usbdebug.sh 2>&1 || true
+          echo "=== recovery/root/prop.default usb props ==="
+          grep -e 'recovery.usb' -e 'sys.usb' -e 'ro.debuggable=' \
+            "$out"/recovery/root/prop.default 2>&1 || true
+          echo "=== vendor_boot ramdisk contents (cpio names) ==="
+          ramdisk="$out"/obj/PACKAGING/vendor_boot_intermediates/vendor_ramdisk.cpio.lz4
+          if [ -f "$ramdisk" ]; then
+            ls -l "$ramdisk"
+            echo "lz4: $(command -v lz4 || echo 'not found')"
+            lz4 -dc "$ramdisk" > /tmp/vr.cpio 2>/tmp/vr.err && st=0 || st=$?
+            echo "decompress status: $st  size: $(stat -c%s /tmp/vr.cpio 2>/dev/null)"
+            head -c 200 /tmp/vr.err 2>/dev/null || true
+            head -c 6 /tmp/vr.cpio 2>/dev/null | od -c | head -2
+            echo "--- strings scan"
+            strings -a /tmp/vr.cpio 2>/dev/null | grep -a \
+              -e 'init\.recovery\.' -e 'usbdebug' -e 'modules\.load\.recovery' \
+              | sort -u | head -40 || true
+            echo "--- cpio parse"
+            python3 - /tmp/vr.cpio <<'PYX' || true
+          import sys
+          try:
+              d = open(sys.argv[1], 'rb').read()
+          except OSError as e:
+              print('cannot read cpio:', e)
+              raise SystemExit
+          i = 0
+          names = []
+          while i + 110 <= len(d) and d[i:i+6] in (b'070701', b'070702'):
+              def f(o):
+                  return int(d[i+o:i+o+8], 16)
+              size, nsz = f(54), f(94)
+              names.append(d[i+110:i+110+nsz-1].decode('utf-8', 'replace'))
+              i += 110 + nsz
+              i = (i + 3) & ~3
+              i += (size + 3) & ~3
+          print('cpio entries:', len(names))
+          for n in sorted(names):
+              if (n.startswith('init.recovery.') or n in (
+                      'system/etc/usbdebug.sh', 'system/bin/recovery',
+                      'lib/modules/modules.load.recovery')):
+                  print(n)
+          PYX
+          else
+            echo "missing $ramdisk"
+          fi
+
       - name: Collect images
         if: always()
         run: |

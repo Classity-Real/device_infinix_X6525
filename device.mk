@@ -97,14 +97,36 @@ PRODUCT_COPY_FILES += \
 # installed under every board/project name the stock firmware ships an
 # init/ueventd script for (X6525 or one of the Unisoc ums9230 board names);
 # recovery only imports the matching one.
+# Every name the stock vendor_boot ramdisk ships an fstab/ueventd file for.
+# The path is captured with := because the prepare recipe below is expanded at
+# execution time, when LOCAL_PATH points at whatever makefile was parsed last.
+RECOVERY_USB_DIR := $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 RECOVERY_INIT_RC_NAMES := \
-    X6525 \
+    X6525 X6528 X6528B \
+    A666L A666LN \
+    BG6 BG6h BG6i BG6n BG6s \
+    P663L P663LN P683L \
+    S662LT S662LTGO S681LN \
     ums9230 ums9230_1h10 ums9230_1h10_go \
     ums9230_4h10 ums9230_4h10_go \
     ums9230_6h10 ums9230_7h10 ums9230_haps ums9230_zebu \
     qogirl6 unknown
 $(foreach name,$(RECOVERY_INIT_RC_NAMES), \
     $(eval PRODUCT_COPY_FILES += $(LOCAL_PATH)/rootdir/etc/init.recovery.X6525.rc:$(TARGET_COPY_OUT_ROOT)/init.recovery.$(name).rc))
+
+# PRODUCT_COPY_FILES targets are not part of ALL_DEFAULT_INSTALLED_MODULES, so
+# INTERNAL_ROOT_FILES does not list them and the recovery ramdisk recipe (which
+# rsyncs $(TARGET_ROOT_OUT) and then globs $(TARGET_ROOT_OUT)/init.recovery.*.rc)
+# has no dependency on them: ninja may run the copy before or after that recipe.
+# Install the USB init scripts and the diagnostics script a second time, as the
+# last step of the recovery image recipe. The vendor ramdisk build depends on
+# that recipe, so the files are guaranteed to be in $(TARGET_RECOVERY_ROOT_OUT)
+# before mkbootfs runs.
+BOARD_RECOVERY_IMAGE_PREPARE = \
+    mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/system/etc; \
+    $(foreach name,$(RECOVERY_INIT_RC_NAMES),cp -f $(RECOVERY_USB_DIR)/rootdir/etc/init.recovery.X6525.rc $(TARGET_RECOVERY_ROOT_OUT)/init.recovery.$(name).rc;) \
+    cp -f $(RECOVERY_USB_DIR)/rootdir/etc/usbdebug.sh $(TARGET_RECOVERY_ROOT_OUT)/system/etc/usbdebug.sh; \
+    chmod 0755 $(TARGET_RECOVERY_ROOT_OUT)/system/etc/usbdebug.sh
 
 # Kernel module helpers read by init.insmod.sh from /vendor/lib/modules
 PRODUCT_COPY_FILES += \
