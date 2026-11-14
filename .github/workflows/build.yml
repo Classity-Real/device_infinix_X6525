@@ -215,6 +215,62 @@ jobs:
           ls -lh artifacts || true
           sha256sum artifacts/* 2>/dev/null || true
 
+      # Raw images of the dynamic partitions, for installing the ROM without a
+      # working recovery USB: the OTA zip carries a payload.bin, which only
+      # update_engine (i.e. `adb sideload`) can apply - the bootloader's fastboot
+      # cannot flash logical partitions and TWRP cannot apply an A/B payload.
+      # These images are written straight to /dev/block/mapper/{system,...} by
+      # TWRP's Install Image (or by fastboot, if the bootloader answers
+      # `getvar is-logical:<name>`).
+      - name: Collect system images
+        if: always()
+        run: |
+          out=lineage/out/target/product/X6525
+          imgs=lineage/out/target/product/X6525/obj/PACKAGING/target_files_intermediates/*/IMAGES
+          mkdir -p system-images
+          for p in system system_ext product vendor odm vendor_dlkm; do
+            if [ -f "$out/$p.img" ]; then
+              cp -v "$out/$p.img" system-images/
+            else
+              for f in $imgs/"$p.img"; do
+                [ -f "$f" ] && cp -v "$f" system-images/
+              done
+            fi
+          done
+          {
+            echo 'Raw images of the dynamic (super) partitions, built with erofs and an AVB'
+            echo 'hash footer. Install with TWRP -> Install -> Install Image -> pick the file ->'
+            echo 'select the matching partition, in this order:'
+            echo
+            echo '  system.img       -> System Image'
+            echo '  system_ext.img   -> System Ext Image'
+            echo '  product.img      -> Product Image'
+            echo '  vendor.img       -> Vendor Image'
+            echo '  odm.img          -> ODM Image'
+            echo '  vendor_dlkm.img  -> Vendor Dlkm Image'
+            echo
+            echo 'Do not install boot.img / vendor_boot.img / dtbo.img this way; use'
+            echo 'fastboot flash boot|vendor_boot|dtbo from the bootloader for those.'
+            echo
+            echo 'The images are content-sized and smaller than the on-device logical'
+            echo 'partitions, so they fit without touching the super metadata. TWRP must'
+            echo 'have mapped the logical partitions; if Install Image does not list them,'
+            echo 'write the image with:'
+            echo
+            echo '  dd if=system.img of=/dev/block/mapper/system bs=1M'
+          } > system-images/README.txt
+          ls -lh system-images || true
+          sha256sum system-images/*.img 2>/dev/null || true
+
+      - name: Upload system images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-images-X6525-${{ github.run_number }}
+          path: system-images/*
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload build
         if: always()
         uses: actions/upload-artifact@v4
