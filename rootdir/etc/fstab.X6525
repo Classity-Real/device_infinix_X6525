@@ -1,21 +1,58 @@
-# dm-verity is deliberately not requested for the dynamic partitions.
+# SPDX-FileCopyrightText: The LineageOS Project
+# SPDX-License-Identifier: Apache-2.0
 #
-# The stock firmware keeps one chained vbmeta partition per Treble partition
-# (vbmeta_system, vbmeta_vendor, vbmeta_odm, vbmeta_product, vbmeta_system_ext)
-# and those only describe the stock super images. This tree builds its own super
-# images and does not rebuild/refresh those chained vbmetas, so keeping
-# avb=<name> here makes first-stage init fail the hash check and reboot before
-# the boot animation ever starts.
+# Android fstab for Infinix Smart 8 (X6525 / ums9230).
 #
-# Bootloader-side verification of boot/vendor_boot/dtbo is disabled separately
-# on the device; those images are signed with the AOSP testkey.
-system /system erofs ro wait,logical,first_stage_mount,slotselect
-system /system ext4 ro,barrier=1 wait,logical,first_stage_mount,slotselect
-system_ext /system_ext erofs ro wait,logical,first_stage_mount,slotselect
-vendor /vendor erofs ro wait,logical,first_stage_mount,slotselect
-odm /odm erofs ro wait,logical,first_stage_mount,slotselect
-product /product erofs ro wait,logical,first_stage_mount,slotselect
-vendor_dlkm /vendor_dlkm erofs ro wait,logical,first_stage_mount,slotselect
-/dev/block/by-name/tranfs /tranfs ext4 rw,noatime,nosuid,nodev,nomblk_io_submit,noauto_da_alloc wait,check,formattable,nofail,first_stage_mount
-/dev/block/by-name/metadata /metadata f2fs nodev,noatime,nosuid wait,formattable,first_stage_mount,check
-/dev/block/by-name/metadata /metadata ext4 nodev,noatime,nosuid,errors=panic wait,formattable,first_stage_mount,check
+# This file is installed as /first_stage_ramdisk/fstab.X6525 in vendor_boot,
+# used as TARGET_RECOVERY_FSTAB, and copied to /vendor/etc/fstab.X6525 (taking
+# first-copy priority over the proprietary dump copy) so second-stage init uses
+# the same mount table and nofail flags.
+#
+# AVB note: `avb=` and `avb_keys=` match Kyros70/stock first-stage fstab so
+# existing stock/Treble GSI dm-verity systems can mount cleanly. When top-level
+# `vbmeta` is flashed with `--flags 3`, `first_stage_mount` skips hashtree setup
+# automatically even with these flags present.
+
+# ---------------------------------------------------------------------------
+# Logical (dynamic) partitions
+# ---------------------------------------------------------------------------
+system       /system       erofs  ro                     wait,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey,slotselect
+system       /system       ext4   ro,barrier=1           wait,avb=vbmeta_system,logical,first_stage_mount,avb_keys=/avb/q-gsi.avbpubkey:/avb/r-gsi.avbpubkey:/avb/s-gsi.avbpubkey,slotselect
+system_ext   /system_ext   erofs  ro                     wait,avb=vbmeta_system,logical,first_stage_mount,slotselect
+system_ext   /system_ext   ext4   ro,barrier=1           wait,avb=vbmeta_system,logical,first_stage_mount,slotselect
+vendor       /vendor       erofs  ro                     wait,avb=vbmeta_vendor,logical,first_stage_mount,slotselect
+vendor       /vendor       ext4   ro,barrier=1           wait,avb=vbmeta_vendor,logical,first_stage_mount,slotselect
+odm          /odm          erofs  ro                     wait,avb=vbmeta_odm,logical,first_stage_mount,slotselect
+odm          /odm          ext4   ro,barrier=1           wait,avb=vbmeta_odm,logical,first_stage_mount,slotselect
+product      /product      erofs  ro                     wait,avb=vbmeta_product,logical,first_stage_mount,slotselect
+product      /product      ext4   ro,barrier=1           wait,avb=vbmeta_product,logical,first_stage_mount,slotselect
+vendor_dlkm  /vendor_dlkm  erofs  ro                     wait,avb=vbmeta_system_ext,logical,first_stage_mount,slotselect
+vendor_dlkm  /vendor_dlkm  ext4   ro,barrier=1           wait,avb=vbmeta_system_ext,logical,first_stage_mount,slotselect
+
+# ---------------------------------------------------------------------------
+# Metadata (FBE keys + virtual A/B snapshots)
+# ---------------------------------------------------------------------------
+/dev/block/by-name/metadata  /metadata  f2fs  nodev,noatime,nosuid                wait,formattable,first_stage_mount,check
+/dev/block/by-name/metadata  /metadata  ext4  nodev,noatime,nosuid,errors=panic  wait,formattable,first_stage_mount,check
+
+# ---------------------------------------------------------------------------
+# Physical partitions
+# ---------------------------------------------------------------------------
+/dev/block/by-name/userdata  /data  f2fs  noatime,nosuid,nodev,discard,reserve_root=32768,resgid=1065,inline_xattr,inline_data,inlinecrypt,fsync_mode=nobarrier,compress_cache,compress_algorithm=lz4,compress_log_size=2,compress_extension=apk,compress_extension=so,compress_mode=fs  latemount,wait,quota,check,fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized,keydirectory=/metadata/vold/metadata_encryption,reservedsize=128M,checkpoint=fs,formattable,fscompress,sysfs_path=/sys/devices/platform/soc/soc:ap-apb/20200000.ufs
+
+/dev/block/by-name/cache     /cache     f2fs  noatime,nosuid,nodev,discard                                   wait,check,formattable
+/dev/block/by-name/cache     /cache     ext4  noatime,nosuid,nodev,nomblk_io_submit,noauto_da_alloc       wait,check,formattable
+/dev/block/by-name/misc      /misc      emmc  defaults                                                       defaults
+/dev/block/by-name/tranfs    /tranfs    ext4  rw,noatime,nosuid,nodev,nomblk_io_submit,noauto_da_alloc  wait,check,formattable,nofail,first_stage_mount
+/dev/block/by-name/prodnv    /mnt/vendor        ext4  noatime,nosuid,nodev,nomblk_io_submit,noauto_da_alloc    wait,check,nofail
+/dev/block/by-name/blackbox  /blackbox  ext4  noatime,nosuid,nodev,nomblk_io_submit,noauto_da_alloc    wait,check,nofail
+/dev/block/by-name/blackbox  /blackbox  f2fs  noatime,nosuid,nodev,discard                                   wait,check,nofail
+
+# Uncomment if your dump has a /persist mount in the stock fstab.
+#/dev/block/by-name/persist   /persist   ext4  noatime,nosuid,nodev,nomblk_io_submit,noauto_da_alloc    wait,check
+
+# ---------------------------------------------------------------------------
+# USB / external storage (vold)
+# ---------------------------------------------------------------------------
+/devices/platform/soc/soc:*/*.usb/musb-hdrc.*.auto/usb*                   auto  vfat  defaults  voldmanaged=usbdisk:auto,encryptable=userdata
+/devices/platform/soc/soc:ap-*/*.sdio/mmc_host/mmc1/mmc1:*/block/mmcblk1  auto  vfat  defaults  voldmanaged=sdcard0:auto,noemulatedsd,encryptable=footer

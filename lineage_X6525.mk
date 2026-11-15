@@ -7,23 +7,22 @@
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 
-# Inherit from X6525 device
+# GSI AVB keys: the stock vendor_boot ramdisk carries
+# /avb/{q,r,s}-gsi.avbpubkey, so as long as you keep the stock vendor_boot
+# (bring-up path A in docs/BRINGUP.md) nothing needs to be installed here.
+# There is no gsi_keys.mk in lineage-20.0; the closest thing is
+# $(SRC_TARGET_DIR)/product/developer_gsi_keys.mk, which installs the
+# *developer* GSI keys under different file names. Only inherit it if you
+# actually intend to boot a developer GSI with verified boot.
+
+# Inherit from the Infinix X6525 device tree.
 $(call inherit-product, device/infinix/X6525/device.mk)
+
+# Temporary bring-up debug: disable ADB RSA auth so early ADB works unattended.
+WITH_ADB_INSECURE := true
 
 # Inherit some common Lineage stuff.
 $(call inherit-product, vendor/lineage/config/common_full_phone.mk)
-
-# The stock vendor image is the source of truth for the shared HAL services.
-# Packages cannot be removed from PRODUCT_PACKAGES here: product inheritance is
-# resolved after this file is parsed, so $(filter-out ...) only sees the
-# @inherit tags, not the packages added by the inherited makefiles. Instead the
-# stock init scripts are shipped at the same paths as the AOSP ones (see
-# proprietary-files.txt), so the stock PRODUCT_COPY_FILES rule overrides the
-# source-built install rule (BUILD_BROKEN_DUP_RULES). This covers the cas,
-# media.omx, rild and boringssl services. The stock cas VINTF fragment is not
-# shipped at all: AOSP's identical fragment is the single declaration.
-
-
 
 PRODUCT_DEVICE := X6525
 PRODUCT_NAME := lineage_X6525
@@ -33,9 +32,12 @@ PRODUCT_MANUFACTURER := Infinix
 
 PRODUCT_GMS_CLIENTID_BASE := android-transsion
 
+# Keep the stock build fingerprint so Play/device certification sees the
+# device it expects. Replace both values with the ones your dump reports:
+#
+#     python3 tools/collect-props.py <dump> | grep -E 'ro.build.(fingerprint|description)'
+#
+# The values below are from the port ROM used as a reference.
 PRODUCT_BUILD_PROP_OVERRIDES += \
-    BuildDesc="X6525-user 13 TP1A.220624.014 665 release-keys" \
-    BuildFingerprint=Infinix/X6525-OP/X6525:13/TP1A.220624.014/250919V1964:user/release-keys
-
-PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
-    ro.sf.lcd_density=320
+    PRIVATE_BUILD_DESC="X6525-user 13 TP1A.220624.014 250909V212 release-keys" \
+    BUILD_FINGERPRINT="Infinix/X6525-OPPJ/Infinix-X6525:13/TP1A.220624.014/250909V212:user/release-keys"

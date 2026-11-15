@@ -1,84 +1,20 @@
-#
-# SPDX-FileCopyrightText: The LineageOS Project
-# SPDX-License-Identifier: Apache-2.0
-#
-
-# Recovery USB for the Unisoc T606 (ums9230 / qogirl6).
-#
-# The stock 5.4 kernel is built without CONFIG_USB_ANDROID, so there is no
-# /sys/class/android_usb/android0 gadget; the only USB gadget interface is
-# configfs (CONFIG_USB_CONFIGFS, CONFIG_USB_CONFIGFS_F_FS). Stock recovery
-# creates that gadget in "on init", with literal vendor/product IDs, and sets
-# sys.usb.configfs=1. This file does the same thing.
-#
-# bootable/recovery's init.rc instead sets sys.usb.configfs=0 in early-init and
-# only creates the gadget in "on fs && property:sys.usb.configfs=1", taking the
-# VID/PID from ro.recovery.usb.vid and ro.recovery.usb.adb.pid. If the trigger
-# does not fire, or either property is empty, the gadget is never created,
-# adbd cannot open /dev/usb-ffs/adb/ep0, the UDC is never written, and the host
-# sees no USB device at all - neither adb/sideload nor fastbootd.
-#
-# Creating the gadget here, with the same literal IDs the Lineage init.rc would
-# have written, removes both dependencies. The generic "on fs" and
-# "on property:sys.usb.config=..." actions still run afterwards and rewrite the
-# same values; their repeated mkdir/mount calls fail with EEXIST/EBUSY and are
-# harmless.
-#
-# The file is imported by the recovery init.rc through
-#   import /init.recovery.${ro.hardware}.rc
-# ro.hardware is supplied by the bootloader (androidboot.hardware, set from the
-# DTBO bootargs_ext overlay) and is not necessarily "X6525": the stock
-# vendor_boot ramdisk ships init/ueventd/fstab files for the whole ums9230
-# family, and a missing or unmatched androidboot.hardware leaves ro.hardware at
-# init's "unknown" default. Recovery USB must not depend on which name the
-# bootloader picked, so this file is installed under every name the stock
-# ramdisk knows about (see RECOVERY_INIT_RC_NAMES in device.mk).
-
 on init
-    # Create the configfs gadget.
-    mount configfs none /config
-    mkdir /config/usb_gadget/g1 0770 shell shell
-    write /config/usb_gadget/g1/idVendor 0x18D1
-    write /config/usb_gadget/g1/idProduct 0xD001
-    mkdir /config/usb_gadget/g1/strings/0x409 0770 shell shell
-    write /config/usb_gadget/g1/strings/0x409/serialnumber ${ro.serialno}
-    write /config/usb_gadget/g1/strings/0x409/manufacturer ${ro.product.manufacturer}
-    write /config/usb_gadget/g1/strings/0x409/product ${ro.product.model}
-    mkdir /config/usb_gadget/g1/configs/b.1 0770 shell shell
-    mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409 0770 shell shell
-    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "adb"
-    write /config/usb_gadget/g1/configs/b.1/MaxPower 500
-
-    # adb (also used by sideload) and fastbootd.
-    mkdir /config/usb_gadget/g1/functions/ffs.adb 0770 shell shell
-    mkdir /config/usb_gadget/g1/functions/ffs.fastboot 0770 shell shell
-
-    # FunctionFS instances. adbd only enables USB when /dev/usb-ffs/adb/ep0
-    # exists, so the mount has to be in place before adbd starts.
-    mkdir /dev/usb-ffs 0770 shell shell
-    mkdir /dev/usb-ffs/adb 0770 shell shell
-    mount functionfs adb /dev/usb-ffs/adb uid=2000,gid=2000
-    mkdir /dev/usb-ffs/fastboot 0770 system system
-    mount functionfs fastboot /dev/usb-ffs/fastboot rmode=0770,fmode=0660,uid=1000,gid=1000
-
-    # UDC of the Unisoc musb controller (CONFIG_USB_MUSB_SPRD, DT node
-    # usb@64900000). vendor.prop sets the same value through prop.default, but
-    # the UDC write must not silently depend on that file.
-    setprop sys.usb.controller musb-hdrc.0.auto
-
-    # Select the configfs triggers of the generic recovery init.rc.
+    write /sys/module/musb_hdrc/parameters/kernel_init_done 1
     setprop sys.usb.configfs 1
+    setprop sys.usb.controller musb-hdrc.1.auto
 
-# Stock recovery also sets the flag from "on boot"; keep that so the value is
-# restored if anything resets it after "on init".
+on fs
+    wait /dev/block/platform/soc/soc:ap-apb/201d0000.sdio
+    symlink /dev/block/platform/soc/soc:ap-apb/201d0000.sdio /dev/block/bootdevice
+
+on post-fs
+    # Wait synchronously for async touch firmware loading / input registration
+    # before 'on boot' launches recovery and enumerates /dev/input/event* once.
+    exec - root root -- /system/bin/sh /system/bin/load_modules.sh
+
 on boot
-    setprop sys.usb.configfs 1
-
-# One-shot diagnostics. If USB still does not come up, the state of the gadget
-# and the kernel log are copied to the cache partition, which TWRP can mount.
-# The script only reads state; it cannot affect the USB setup.
-service usbdebug /system/bin/sh /system/etc/usbdebug.sh
-    user root
-    group root
-    oneshot
-    seclabel u:r:recovery:s0
+    write /sys/module/musb_hdrc/parameters/kernel_init_done 1
+    exec - root root -- /system/bin/sh -c "for u in /sys/class/udc/*; do if [ -e \"$u\" ]; then setprop sys.usb.controller $(basename \"$u\"); break; fi; done"
+    write /sys/class/backlight/sprd_backlight/brightness 128
+    start boot-hal-1-2
+    start health-hal-2-1
