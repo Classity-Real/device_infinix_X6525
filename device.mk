@@ -3,6 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# This device tree's root Android.bp declares its own soong_namespace, which
+# scopes every Soong module under device/infinix/X6525 (including
+# rro_overlays/*) out of the default namespace. Without this, PRODUCT_PACKAGES
+# below (which is resolved against the default namespace) cannot see
+# BluetoothOverlayX6525/TetheringOverlayX6525/WifiOverlayX6525 even though
+# Soong builds them, and ckati fails with "includes non-existent modules".
+PRODUCT_SOONG_NAMESPACES += device/infinix/X6525
+
 # APEX updates
 $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
 
