@@ -167,7 +167,8 @@ BOARD_ROOT_EXTRA_FOLDERS += tranfs blackbox
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.X6525
 TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888
 BOARD_DO_NOT_STRIP_VENDOR_RAMDISK_MODULES := true
-BOARD_VENDOR_RAMDISK_KERNEL_MODULES := $(wildcard $(DEVICE_PATH)/prebuilts/modules/*.ko)
+# Modules live under prebuilts/modules/vendor_ramdisk/, not the parent dir.
+BOARD_VENDOR_RAMDISK_KERNEL_MODULES := $(wildcard $(DEVICE_PATH)/prebuilts/modules/vendor_ramdisk/*.ko)
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD := $(strip $(shell cat $(DEVICE_PATH)/rootdir/etc/modules.load))
 BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD := $(strip $(shell cat $(DEVICE_PATH)/rootdir/etc/modules.load.recovery))
 BOARD_DO_NOT_STRIP_RECOVERY_MODULES := true
