@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <integer-array name="config_wifiRssiLevelThresholds" translatable="false">
+        <item>-90</item>
+        <item>-85</item>
+        <item>-75</item>
+        <item>-64</item>
+    </integer-array>
+
+    <bool name="config_wifi5ghzSupport" translatable="false">true</bool>
+    <bool name="config_wifiAllowInsecureEnterpriseConfigurationsForSettingsAndSUW" translatable="false">true</bool>
+    <bool name="config_wifiSaeH2eSupported" translatable="false">true</bool>
+    <bool name="config_wifiSaveFactoryMacToWifiConfigStore" translatable="false">false</bool>
+    <bool name="config_wifiSoftap5ghzSupported" translatable="false">true</bool>
+    <bool name="config_wifiSoftapPassphraseAsciiEncodableCheck" translatable="false">false</bool>
+    <bool name="config_wifi_background_scan_support" translatable="false">true</bool>
+    <bool name="config_wifi_connected_mac_randomization_supported" translatable="false">true</bool>
+    <bool name="config_wifi_fast_bss_transition_enabled" translatable="false">true</bool>
+    <bool name="config_wifi_framework_enable_associated_network_selection" translatable="false">false</bool>
+    <bool name="config_wifi_framework_enable_sar_tx_power_limit" translatable="false">true</bool>
+    <bool name="config_wifi_framework_enable_soft_ap_sar_tx_power_limit" translatable="false">true</bool>
+    <bool name="config_wifi_p2p_mac_randomization_supported" translatable="false">true</bool>
+    <bool name="config_wifi_softap_acs_supported" translatable="false">true</bool>
+    <bool name="config_wifi_softap_ieee80211ac_supported" translatable="false">true</bool>
+    <bool name="config_wifi_softap_sae_supported" translatable="false">true</bool>
+
+    <integer name="config_wifiHardwareSoftapMaxClientCount" translatable="false">10</integer>
+    <integer name="config_wifi_logger_ring_buffer_verbose_size_limit_kb" translatable="false">64</integer>
+
+    <string name="config_wifiSoftap2gChannelList" translatable="false"></string>
+</resources>
