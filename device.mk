@@ -145,3 +145,7 @@ PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
 
 # Inherit the proprietary files
 $(call inherit-product, vendor/infinix/X6525/X6525-vendor.mk)
+
+# Drop the stock vendor/bin/dumpsys; it conflicts with the Soong install rule
+# for the same path (ckati "overriding commands" error).
+PRODUCT_COPY_FILES := $(filter-out %/dumpsys:%,$(PRODUCT_COPY_FILES))
