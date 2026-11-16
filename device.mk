@@ -87,14 +87,14 @@ PRODUCT_PACKAGES += \
 #         android.hardware.health@2.1-impl \
 #         android.hardware.health@2.1-service
 
-# Power + Thermal (bring-up)
+# Power + Thermal
 #
-# FCM level 7 requires android.hardware.power IPower/default (@2-3) and
-# android.hardware.thermal @2.0. Stock vendor does not declare them in the
-# device manifest, so ship the framework defaults so check_vintf passes.
-PRODUCT_PACKAGES += \
-    android.hardware.power-service \
-    android.hardware.thermal@2.0-service
+# The stock vendor tree provides its own AIDL Power HAL manifest and
+# proprietary power-related libraries. Do not package generic framework
+# services that are not defined in this LineageOS 20 source tree.
+#
+# No compatible Thermal HAL implementation is currently packaged.
+# Add one only after a compatible implementation is available.
 
 # First- and second-stage fstab. Named after ro.hardware, which the bootloader
 # reports as "X6525" on this device. Install to $(TARGET_COPY_OUT_VENDOR)/etc
