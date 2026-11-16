@@ -1,0 +1,72 @@
+# Temporary bring-up diagnostics for Infinix X6525 (slot _b investigation).
+# Emits <0> (KERN_EMERG) markers so boot stage progress always reaches pstore/ramoops,
+# keeps console printk verbose, and runs /vendor/bin/boottrace.sh to snapshot state onto /cache.
+
+service boottrace /vendor/bin/sh /vendor/bin/boottrace.sh
+    user root
+    group root
+    seclabel u:r:shell:s0
+    oneshot
+    disabled
+
+on early-init
+    write /proc/sys/kernel/printk "7 7 1 7"
+    write /dev/kmsg "<0>X6525_STAGE: early-init"
+    start boottrace
+
+on init
+    write /proc/sys/kernel/printk "7 7 1 7"
+    write /dev/kmsg "<0>X6525_STAGE: init"
+
+on late-init
+    write /proc/sys/kernel/printk "7 7 1 7"
+    write /dev/kmsg "<0>X6525_STAGE: late-init"
+
+on early-fs
+    write /dev/kmsg "<0>X6525_STAGE: early-fs"
+
+on fs
+    write /dev/kmsg "<0>X6525_STAGE: fs"
+
+on post-fs
+    write /dev/kmsg "<0>X6525_STAGE: post-fs"
+
+on late-fs
+    write /dev/kmsg "<0>X6525_STAGE: late-fs"
+
+on post-fs-data
+    write /dev/kmsg "<0>X6525_STAGE: post-fs-data"
+
+on early-boot
+    write /dev/kmsg "<0>X6525_STAGE: early-boot"
+
+on boot
+    write /proc/sys/kernel/printk "7 7 1 7"
+    write /dev/kmsg "<0>X6525_STAGE: boot"
+
+on property:vendor.all.modules.ready=*
+    write /dev/kmsg "<0>X6525_PROP: vendor.all.modules.ready=${vendor.all.modules.ready:-empty}"
+
+on property:sys.usb.configfs=*
+    write /dev/kmsg "<0>X6525_PROP: sys.usb.configfs=${sys.usb.configfs:-empty}"
+
+on property:sys.usb.mode=*
+    write /dev/kmsg "<0>X6525_PROP: sys.usb.mode=${sys.usb.mode:-empty}"
+
+on property:sys.usb.config=*
+    write /dev/kmsg "<0>X6525_PROP: sys.usb.config=${sys.usb.config:-empty}"
+
+on property:sys.usb.state=*
+    write /dev/kmsg "<0>X6525_PROP: sys.usb.state=${sys.usb.state:-empty}"
+
+on property:sys.usb.ffs.ready=*
+    write /dev/kmsg "<0>X6525_PROP: sys.usb.ffs.ready=${sys.usb.ffs.ready:-empty}"
+
+on property:init.svc.adbd=*
+    write /dev/kmsg "<0>X6525_SVC: adbd=${init.svc.adbd:-empty}"
+
+on property:init.svc.watchdogd=*
+    write /dev/kmsg "<0>X6525_SVC: watchdogd=${init.svc.watchdogd:-empty}"
+
+on property:sys.boot_completed=*
+    write /dev/kmsg "<0>X6525_PROP: sys.boot_completed=${sys.boot_completed:-empty}"

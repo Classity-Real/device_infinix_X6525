@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<carrier_config_list>
+    <!-- Globe Telecom PH (515/02): prefer direct http.globe.com.ph over legacy 203.177.42.214:8080 WAP proxy -->
+    <carrier_config mcc="515" mnc="02">
+        <string name="default_preferred_apn_name_string">http.globe.com.ph</string>
+    </carrier_config>
+</carrier_config_list>
