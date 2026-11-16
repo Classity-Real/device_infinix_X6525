@@ -75,6 +75,14 @@
             <instance>default</instance>
         </interface>
     </hal>
+    <hal format="aidl" optional="true">
+        <name>vendor.sprd.hardware.network</name>
+        <version>1</version>
+        <interface>
+            <name>INetworkControl</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
     <hal format="hidl" optional="true">
         <name>vendor.sprd.hardware.power</name>
         <version>1.0</version>
@@ -86,8 +94,9 @@
     <hal format="hidl" optional="true">
         <name>vendor.sprd.hardware.thermal</name>
         <version>1.0</version>
+        <version>2.0</version>
         <interface>
-            <name>IThermalExt</name>
+            <name>IExtThermal</name>
             <instance>default</instance>
         </interface>
     </hal>
@@ -100,10 +109,34 @@
         </interface>
     </hal>
     <hal format="hidl" optional="true">
+        <name>vendor.sprd.hardware.wcn</name>
+        <version>1.0</version>
+        <interface>
+            <name>IWcnVendorInterface</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
         <name>vendor.sprd.hardware.wifi</name>
         <version>1.0</version>
         <interface>
             <name>IWifi</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.transsion.hardware.tne.tneengine</name>
+        <version>1.0</version>
+        <interface>
+            <name>ITne</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.transsion.hardware.tranlog</name>
+        <version>1.0</version>
+        <interface>
+            <name>ITranLog</name>
             <instance>default</instance>
         </interface>
     </hal>
