@@ -1,0 +1,54 @@
+<compatibility-matrix version="2.0" type="framework">
+    <hal format="hidl" optional="true">
+        <name>vendor.goodix.hardware.biometrics.fingerprint</name>
+        <version>2.1</version>
+        <interface>
+            <name>IGoodixFingerprintDaemon</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.silead.hardware.fingerprintext</name>
+        <version>1.0</version>
+        <interface>
+            <name>ISileadFingerprint</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.sprd.hardware.algoservice</name>
+        <version>1.0</version>
+        <interface>
+            <name>IAlgoService</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.sprd.hardware.boot</name>
+        <version>1.2</version>
+        <interface>
+            <name>IBootControl</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.sprd.hardware.connmgr</name>
+        <version>1.0</version>
+        <interface>
+            <name>IConnmgr</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="aidl" optional="true">
+        <name>vendor.sprd.hardware.cplog_svc</name>
+        <version>1</version>
+        <interface>
+            <name>ILogTransportInductor</name>
+            <instance>default</instance>
+        </interface>
+        <interface>
+            <name>ISysLogControl</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+</compatibility-matrix>
