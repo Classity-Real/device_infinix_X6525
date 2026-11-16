@@ -87,6 +87,15 @@ PRODUCT_PACKAGES += \
 #         android.hardware.health@2.1-impl \
 #         android.hardware.health@2.1-service
 
+# Power + Thermal (bring-up)
+#
+# FCM level 7 requires android.hardware.power IPower/default (@2-3) and
+# android.hardware.thermal @2.0. Stock vendor does not declare them in the
+# device manifest, so ship the framework defaults so check_vintf passes.
+PRODUCT_PACKAGES += \
+    android.hardware.power-service \
+    android.hardware.thermal@2.0-service
+
 # First- and second-stage fstab. Named after ro.hardware, which the bootloader
 # reports as "X6525" on this device. Install to $(TARGET_COPY_OUT_VENDOR)/etc
 # before inheriting X6525-vendor.mk so it wins first-copy priority over the dump
@@ -143,8 +152,7 @@ PRODUCT_CHARACTERISTICS := default
 # which conflicts with FCM level 6 kernel config requirements during OTA/VINTF check.
 PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
 
-# Bring-up: device does not yet provide android.hardware.power / thermal at the
-# levels required by FCM 7. Relax the check so the build can complete.
+# Bring-up: also keep this false so any remaining VINTF mismatches do not fail packaging.
 PRODUCT_ENFORCE_VINTF_MANIFEST := false
 
 # Inherit the proprietary files
