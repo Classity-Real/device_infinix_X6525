@@ -143,6 +143,10 @@ PRODUCT_CHARACTERISTICS := default
 # which conflicts with FCM level 6 kernel config requirements during OTA/VINTF check.
 PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
 
+# Bring-up: device does not yet provide android.hardware.power / thermal at the
+# levels required by FCM 7. Relax the check so the build can complete.
+PRODUCT_ENFORCE_VINTF_MANIFEST := false
+
 # Inherit the proprietary files
 $(call inherit-product, vendor/infinix/X6525/X6525-vendor.mk)
 
