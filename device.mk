@@ -166,3 +166,9 @@ $(call inherit-product, vendor/infinix/X6525/X6525-vendor.mk)
 # Drop the stock vendor/bin/dumpsys; it conflicts with the Soong install rule
 # for the same path (ckati "overriding commands" error).
 PRODUCT_COPY_FILES := $(filter-out %/dumpsys:%,$(PRODUCT_COPY_FILES))
+
+# VINTF metadata must not be installed via PRODUCT_COPY_FILES (AOSP main.mk).
+# Seuj09 keeps these out of the generated vendor makefile; we strip them after
+# inherit. Manifests are still consumed via DEVICE_MANIFEST_FILE in BoardConfig.
+PRODUCT_COPY_FILES := $(foreach pair,$(PRODUCT_COPY_FILES),\
+    $(if $(findstring /vintf/,$(pair)),,$(pair)))
