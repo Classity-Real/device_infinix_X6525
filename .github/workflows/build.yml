@@ -27,7 +27,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Classity-Real/vendor_infinix_X6525
-          # Last good X6525-vendor.mk before accidental PLACEHOLDER overwrite
           ref: 6b85cb322793ab3c9f4a67889ce95ef30d34088a
           path: lineage/vendor/infinix/X6525
 
@@ -35,11 +34,9 @@ jobs:
         run: |
           mk=lineage/vendor/infinix/X6525/X6525-vendor.mk
           echo "Before: vintf=$(grep -c '/vintf/' "$mk" || true) apk=$(grep -c '\.apk:' "$mk" || true)"
-          # AOSP forbids VINTF metadata and prebuilt APKs in PRODUCT_COPY_FILES
-          # (use DEVICE_MANIFEST_FILE / BUILD_PREBUILT instead). Seuj09 never
-          # generates these entries; strip them so kati can proceed.
           sed -i '/\/vintf\//d' "$mk"
           sed -i '/\.apk:/d' "$mk"
+          sed -i '/android.hardware.audio.service/d' "$mk"
           sed -i '/^[[:space:]]*\\[[:space:]]*$/d' "$mk"
           if grep -qE '/vintf/|\.apk:' "$mk"; then
             echo "ERROR: forbidden PRODUCT_COPY_FILES entries still present" >&2
@@ -155,64 +152,6 @@ jobs:
         run: |
           img=out/target/product/X6525/vendor_boot.img
           ls -l "$img" 2>&1 || exit 0
-          python3 - "$img" <<'PYX' || true
-          import os, re, shutil, struct, subprocess, sys, tempfile
-
-          for tool in ('lz4', 'cpio'):
-              if not shutil.which(tool):
-                  print('::warning::%s is not installed; cannot list ramdisk entries' % tool)
-                  raise SystemExit(0)
-
-          d = open(sys.argv[1], 'rb').read()
-          if d[:8] != b'VNDRBOOT':
-              print('not a vendor_boot image')
-              raise SystemExit
-          u32 = lambda o: struct.unpack_from('<I', d, o)[0]
-          page, vrs, dtbsz = u32(12), u32(24), u32(2100)
-          ents, esz = u32(2116), u32(2120)
-          print('vendor cmdline:', d[28:2084].split(b'\0')[0].decode(errors='replace'))
-          off = page + (vrs + page - 1) // page * page
-          print('dtb bootargs:')
-          for s in re.findall(rb'[ -~]{20,}', d[off:off + dtbsz]):
-              t = s.decode()
-              if 'androidboot' in t or t.startswith('earlycon'):
-                  print('   ', t)
-          tbl = off + (dtbsz + page - 1) // page * page
-          print('fragments:', ents)
-          types = {1: 'PLATFORM', 2: 'RECOVERY'}
-          frags = {}
-          for i in range(ents):
-              e = tbl + i * esz
-              sz, fo, typ = struct.unpack_from('<III', d, e)
-              name = d[e + 12:e + 44].split(b'\0')[0].decode(errors='replace')
-              print('  [%d] type=%s name=%r size=%d'
-                    % (i, types.get(typ, typ), name, sz))
-              raw = d[page + fo:page + fo + sz]
-              tmp = os.path.join(tempfile.mkdtemp(), 'f%d' % i)
-              open(tmp + '.lz4', 'wb').write(raw)
-              lz = subprocess.run(['lz4', '-dc', tmp + '.lz4'], capture_output=True)
-              open(tmp, 'wb').write(lz.stdout if lz.returncode == 0 else raw)
-              names = subprocess.run(['cpio', '-it', '--quiet'], stdin=open(tmp, 'rb'),
-                                     capture_output=True).stdout.decode(errors='replace').split()
-              frags[typ] = names
-              print('       entries: %d' % len(names))
-          plat = set(frags.get(1, []))
-          rec = set(frags.get(2, []))
-          print('platform ramdisk:')
-          for req in ('first_stage_ramdisk/fstab.X6525',
-                      'first_stage_ramdisk/system/bin/linker64',
-                      'first_stage_ramdisk/system/bin/e2fsck',
-                      'first_stage_ramdisk/system/bin/fsck.f2fs',
-                      'first_stage_ramdisk/system/bin/snapuserd',
-                      'lib/modules/modules.load',
-                      'lib/modules/modules.load.recovery',
-                      'lib/modules/ufs-sprd_qogirl6.ko'):
-              print('   %-52s %s' % (req, 'ok' if req in plat else 'MISSING'))
-          print('recovery ramdisk:')
-          for req in ('init.recovery.X6525.rc', 'system/bin/recovery',
-                      'system/etc/recovery.fstab', 'first_stage_ramdisk/fstab.X6525'):
-              print('   %-52s %s' % (req, 'ok' if req in rec else 'MISSING'))
-          PYX
 
       - name: Collect images
         if: always()

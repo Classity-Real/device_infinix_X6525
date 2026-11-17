@@ -163,9 +163,12 @@ PRODUCT_ENFORCE_VINTF_MANIFEST := false
 # Inherit the proprietary files
 $(call inherit-product, vendor/infinix/X6525/X6525-vendor.mk)
 
-# Drop the stock vendor/bin/dumpsys; it conflicts with the Soong install rule
-# for the same path (ckati "overriding commands" error).
-PRODUCT_COPY_FILES := $(filter-out %/dumpsys:%,$(PRODUCT_COPY_FILES))
+# Drop stock copies that collide with Soong install rules (ckati
+# "overriding commands" error): dumpsys and the HIDL audio service binary.
+PRODUCT_COPY_FILES := $(filter-out \
+    %/dumpsys:% \
+    %/android.hardware.audio.service:% \
+    %/android.hardware.audio.service.rc:%,$(PRODUCT_COPY_FILES))
 
 # VINTF metadata must not be installed via PRODUCT_COPY_FILES (AOSP main.mk).
 # Seuj09 keeps these out of the generated vendor makefile; we strip them after
