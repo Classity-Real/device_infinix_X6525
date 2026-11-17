@@ -36,15 +36,16 @@ jobs:
           echo "Before: vintf=$(grep -c '/vintf/' "$mk" || true) apk=$(grep -c '\.apk:' "$mk" || true)"
           sed -i '/\/vintf\//d' "$mk"
           sed -i '/\.apk:/d' "$mk"
-          sed -i '/android.hardware.audio.service/d' "$mk"
+          sed -i '/android.hardware.audio/d' "$mk"
+          sed -i '/audio\.primary\.default/d' "$mk"
+          sed -i '/audio\.r_submix\.default/d' "$mk"
+          sed -i '/audio\.usb\.default/d' "$mk"
           sed -i '/^[[:space:]]*\\[[:space:]]*$/d' "$mk"
           if grep -qE '/vintf/|\.apk:' "$mk"; then
             echo "ERROR: forbidden PRODUCT_COPY_FILES entries still present" >&2
-            grep -E '/vintf/|\.apk:' "$mk" || true
             exit 1
           fi
           echo "Sanitized vendor makefile"
-          head -8 "$mk"
 
       - name: Set up ccache volume
         uses: namespacelabs/nscloud-cache-action@v1
@@ -55,14 +56,8 @@ jobs:
 
       - name: Free disk space
         run: |
-          sudo rm -rf \
-            /usr/share/dotnet \
-            /usr/local/lib/android \
-            /usr/local/share/boost \
-            /opt/ghc \
-            /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /usr/local/share/boost /opt/ghc /opt/hostedtoolcache/CodeQL || true
           sudo apt-get clean || true
-          df -h /
 
       - name: Install build dependencies
         run: |
@@ -73,28 +68,18 @@ jobs:
             libsdl1.2-dev libssl-dev libxml2 libxml2-utils lz4 lzop pngcrush \
             rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 \
             python-is-python3 device-tree-compiler || true
-          sudo apt-get install -y --no-install-recommends \
-            lib32ncurses-dev lib32readline-dev lib32z1-dev || true
-          if ! sudo apt-get install -y --no-install-recommends \
-                 libncurses5 libtinfo5; then
+          sudo apt-get install -y --no-install-recommends lib32ncurses-dev lib32readline-dev lib32z1-dev || true
+          if ! sudo apt-get install -y --no-install-recommends libncurses5 libtinfo5; then
             base=http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses
             curl -fsSLo /tmp/libncurses5.deb "$base/libncurses5_6.2-0ubuntu2_amd64.deb"
             curl -fsSLo /tmp/libtinfo5.deb "$base/libtinfo5_6.2-0ubuntu2_amd64.deb"
             sudo dpkg -i /tmp/libtinfo5.deb /tmp/libncurses5.deb
           fi
-          for t in git curl python3 unzip; do command -v "$t" >/dev/null || exit 1; done
 
       - name: Set up swap
         continue-on-error: true
         run: |
-          if sudo fallocate -l 32G /swapfile && sudo chmod 600 /swapfile \
-             && sudo mkswap /swapfile && sudo swapon /swapfile; then
-            echo "swap enabled"
-          else
-            echo "swap not available on this runner, continuing without it"
-            sudo rm -f /swapfile || true
-          fi
-          free -h
+          if sudo fallocate -l 32G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile; then echo swap enabled; else sudo rm -f /swapfile || true; fi
 
       - name: Configure ccache
         run: |
@@ -102,10 +87,7 @@ jobs:
           echo "CCACHE_DIR=/home/runner/.ccache" >> "$GITHUB_ENV"
           echo "USE_CCACHE=1" >> "$GITHUB_ENV"
           echo "CCACHE_EXEC=/usr/bin/ccache" >> "$GITHUB_ENV"
-          echo "CCACHE_COMPILERCHECK=content" >> "$GITHUB_ENV"
-          echo "CCACHE_COMPRESS=true" >> "$GITHUB_ENV"
           ccache -M 20G || true
-          ccache -s || true
 
       - name: Install repo
         run: |
@@ -127,16 +109,12 @@ jobs:
         run: |
           repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle --no-tags \
             || repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle --no-tags
-          df -h /
 
       - name: Patch the DTB kernel command line
         run: |
           python3 lineage/device/infinix/X6525/tools/dtb_bootargs.py \
             lineage/device/infinix/X6525/prebuilts/dtb/dtb.dtb \
-            --drop loglevel=1 \
-            --add loglevel=7 \
-            --add ignore_loglevel \
-            --add androidboot.selinux=permissive
+            --drop loglevel=1 --add loglevel=7 --add ignore_loglevel --add androidboot.selinux=permissive
 
       - name: Build
         working-directory: lineage
@@ -159,37 +137,20 @@ jobs:
           out=lineage/out/target/product/X6525
           mkdir -p artifacts
           shopt -s nullglob
-          for f in "$out"/lineage-20.0-*.zip \
-                   "$out"/boot.img \
-                   "$out"/vendor_boot.img \
-                   "$out"/dtbo.img \
-                   "$out"/super_empty.img; do
+          for f in "$out"/lineage-20.0-*.zip "$out"/boot.img "$out"/vendor_boot.img "$out"/dtbo.img "$out"/super_empty.img; do
             [ -e "$f" ] && cp -v "$f" artifacts/ || true
           done
-          if [ ! -e artifacts/vendor_boot.img ]; then
-            cp -v "$out"/obj/PACKAGING/target_files_intermediates/*/IMAGES/vendor_boot.img \
-              artifacts/ || true
-          fi
           ls -lh artifacts || true
-          sha256sum artifacts/* 2>/dev/null || true
 
       - name: Collect system images
         if: always()
         run: |
           out=lineage/out/target/product/X6525
-          imgs=lineage/out/target/product/X6525/obj/PACKAGING/target_files_intermediates/*/IMAGES
           mkdir -p system-images
           for p in system system_ext product vendor odm vendor_dlkm; do
-            if [ -f "$out/$p.img" ]; then
-              cp -v "$out/$p.img" system-images/
-            else
-              for f in $imgs/"$p.img"; do
-                [ -f "$f" ] && cp -v "$f" system-images/
-              done
-            fi
+            [ -f "$out/$p.img" ] && cp -v "$out/$p.img" system-images/ || true
           done
           ls -lh system-images || true
-          sha256sum system-images/*.img 2>/dev/null || true
 
       - name: Upload system images
         if: always()
