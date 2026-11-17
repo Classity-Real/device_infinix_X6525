@@ -28,6 +28,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Classity-Real/vendor_infinix_X6525
+          # Last good X6525-vendor.mk before accidental PLACEHOLDER overwrite
+          ref: 6b85cb322793ab3c9f4a67889ce95ef30d34088a
           path: lineage/vendor/infinix/X6525
 
       # AOSP rejects VINTF XML in PRODUCT_COPY_FILES. Seuj09 never generates
@@ -38,13 +40,13 @@ jobs:
           mk=lineage/vendor/infinix/X6525/X6525-vendor.mk
           grep -c '/vintf/' "$mk" || true
           sed -i '/\/vintf\//d' "$mk"
-          # Drop empty continuation-only lines left behind
           sed -i '/^[[:space:]]*\\[[:space:]]*$/d' "$mk"
           if grep -q '/vintf/' "$mk"; then
             echo "ERROR: vintf paths still present in $mk" >&2
             exit 1
           fi
           echo "VINTF PRODUCT_COPY_FILES entries removed from vendor makefile"
+          head -8 "$mk"
 
       - name: Set up ccache volume
         uses: namespacelabs/nscloud-cache-action@v1
@@ -210,6 +212,7 @@ jobs:
                       'system/etc/recovery.fstab', 'first_stage_ramdisk/fstab.X6525'):
               print('   %-52s %s' % (req, 'ok' if req in rec else 'MISSING'))
           PYX
+
       - name: Collect images
         if: always()
         run: |
@@ -245,21 +248,6 @@ jobs:
               done
             fi
           done
-          {
-            echo 'Raw images of the dynamic (super) partitions, built with erofs and an AVB'
-            echo 'hash footer. Install with TWRP -> Install -> Install Image -> pick the file ->'
-            echo 'select the matching partition, in this order:'
-            echo
-            echo '  system.img       -> System Image'
-            echo '  system_ext.img   -> System Ext Image'
-            echo '  product.img      -> Product Image'
-            echo '  vendor.img       -> Vendor Image'
-            echo '  odm.img          -> ODM Image'
-            echo '  vendor_dlkm.img  -> Vendor Dlkm Image'
-            echo
-            echo 'Do not install boot.img / vendor_boot.img / dtbo.img this way; use'
-            echo 'fastboot flash boot|vendor_boot|dtbo from the bootloader for those.'
-          } > system-images/README.txt
           ls -lh system-images || true
           sha256sum system-images/*.img 2>/dev/null || true
 
