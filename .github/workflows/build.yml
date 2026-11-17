@@ -30,6 +30,22 @@ jobs:
           repository: Classity-Real/vendor_infinix_X6525
           path: lineage/vendor/infinix/X6525
 
+      # AOSP rejects VINTF XML in PRODUCT_COPY_FILES. Seuj09 never generates
+      # those entries; strip them from the generated vendor makefile here so
+      # DEVICE_MANIFEST_FILE remains the only consumer of the manifests.
+      - name: Strip VINTF from vendor PRODUCT_COPY_FILES
+        run: |
+          mk=lineage/vendor/infinix/X6525/X6525-vendor.mk
+          grep -c '/vintf/' "$mk" || true
+          sed -i '/\/vintf\//d' "$mk"
+          # Drop empty continuation-only lines left behind
+          sed -i '/^[[:space:]]*\\[[:space:]]*$/d' "$mk"
+          if grep -q '/vintf/' "$mk"; then
+            echo "ERROR: vintf paths still present in $mk" >&2
+            exit 1
+          fi
+          echo "VINTF PRODUCT_COPY_FILES entries removed from vendor makefile"
+
       - name: Set up ccache volume
         uses: namespacelabs/nscloud-cache-action@v1
         continue-on-error: true
@@ -57,13 +73,8 @@ jobs:
             libsdl1.2-dev libssl-dev libxml2 libxml2-utils lz4 lzop pngcrush \
             rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 \
             python-is-python3 device-tree-compiler || true
-          # 32-bit libs are only needed for the legacy 32-bit tools; keep going
-          # if this repository is unavailable on the runner image.
           sudo apt-get install -y --no-install-recommends \
             lib32ncurses-dev lib32readline-dev lib32z1-dev || true
-          # The legacy clang used for the RenderScript bitcode
-          # (prebuilts/clang/host/linux-x86/clang-3289846) links against ncurses 5,
-          # which Ubuntu 24.04 (noble) no longer ships.
           if ! sudo apt-get install -y --no-install-recommends \
                  libncurses5 libtinfo5; then
             base=http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses
@@ -76,8 +87,6 @@ jobs:
       - name: Set up swap
         continue-on-error: true
         run: |
-          # Namespace runners are containers and may forbid swapon; the build
-          # still has 32 GB of RAM, so this is only a safety net.
           if sudo fallocate -l 32G /swapfile && sudo chmod 600 /swapfile \
              && sudo mkswap /swapfile && sudo swapon /swapfile; then
             echo "swap enabled"
@@ -95,9 +104,6 @@ jobs:
           echo "CCACHE_EXEC=/usr/bin/ccache" >> "$GITHUB_ENV"
           echo "CCACHE_COMPILERCHECK=content" >> "$GITHUB_ENV"
           echo "CCACHE_COMPRESS=true" >> "$GITHUB_ENV"
-          # The Namespace cache volume is 49G. A 50G ccache fills it up, which
-          # makes the post-job cache save exceed the volume (and the action
-          # never persists anything). 20G leaves headroom and compresses well.
           ccache -M 20G || true
           ccache -s || true
 
@@ -125,18 +131,6 @@ jobs:
 
       - name: Patch the DTB kernel command line
         run: |
-          # LK builds the kernel command line from /chosen/bootargs of the DTB
-          # in vendor_boot.img and then appends the vendor_boot header cmdline
-          # (BOARD_KERNEL_CMDLINE). The saved last_kmsg on the device shows both
-          # in one line, so BOARD_KERNEL_CMDLINE is effective; the DTB is still
-          # patched because it is the only place that can raise loglevel before
-          # init starts.
-          #
-          # loglevel=1 (stock) hides every init message from the console, and
-          # the only capture channel the X6525 gives us after a failed boot is
-          # ramoops/pstore, which stores console output. Raise the level and
-          # force every printk to the console so init's LOG(FATAL) reason is
-          # recorded.
           python3 lineage/device/infinix/X6525/tools/dtb_bootargs.py \
             lineage/device/infinix/X6525/prebuilts/dtb/dtb.dtb \
             --drop loglevel=1 \
@@ -150,15 +144,8 @@ jobs:
           set -o pipefail
           source build/envsetup.sh
           lunch lineage_X6525-userdebug
-          # vendorbootimage is an explicit goal because `bacon` builds
-          # vendor_boot.img only inside the target-files package, not into
-          # out/target/product/X6525.
           mka bacon vendorbootimage -j"$(nproc)"
 
-      # Check the final image, not the staging directories, and never fail the
-      # build here. vendor_boot has two ramdisk fragments: the platform ramdisk
-      # (first-stage fstab, modules, fsck toolset, snapuserd) and the RECOVERY
-      # ramdisk (lineage recovery root).
       - name: Inspect the built vendor_boot image
         if: always()
         working-directory: lineage
@@ -168,10 +155,6 @@ jobs:
           python3 - "$img" <<'PYX' || true
           import os, re, shutil, struct, subprocess, sys, tempfile
 
-          # This job does not need the Android build's host tools, but the
-          # ramdisk listing needs lz4 + cpio from the distro. Fail loudly and
-          # with a hint instead of a bare traceback: the step is `|| true`, so a
-          # silent exception would look like a shorter fragment listing.
           for tool in ('lz4', 'cpio'):
               if not shutil.which(tool):
                   print('::warning::%s is not installed; cannot list ramdisk entries' % tool)
@@ -232,8 +215,6 @@ jobs:
         run: |
           out=lineage/out/target/product/X6525
           mkdir -p artifacts
-          # The globs must be prefixed with $out: an unquoted wildcard is
-          # expanded relative to the current directory, not to $out.
           shopt -s nullglob
           for f in "$out"/lineage-20.0-*.zip \
                    "$out"/boot.img \
@@ -249,13 +230,6 @@ jobs:
           ls -lh artifacts || true
           sha256sum artifacts/* 2>/dev/null || true
 
-      # Raw images of the dynamic partitions, for installing the ROM without a
-      # working recovery USB: the OTA zip carries a payload.bin, which only
-      # update_engine (i.e. `adb sideload`) can apply - the bootloader's fastboot
-      # cannot flash logical partitions and TWRP cannot apply an A/B payload.
-      # These images are written straight to /dev/block/mapper/{system,...} by
-      # TWRP's Install Image (or by fastboot, if the bootloader answers
-      # `getvar is-logical:<name>`).
       - name: Collect system images
         if: always()
         run: |
@@ -285,13 +259,6 @@ jobs:
             echo
             echo 'Do not install boot.img / vendor_boot.img / dtbo.img this way; use'
             echo 'fastboot flash boot|vendor_boot|dtbo from the bootloader for those.'
-            echo
-            echo 'The images are content-sized and smaller than the on-device logical'
-            echo 'partitions, so they fit without touching the super metadata. TWRP must'
-            echo 'have mapped the logical partitions; if Install Image does not list them,'
-            echo 'write the image with:'
-            echo
-            echo '  dd if=system.img of=/dev/block/mapper/system bs=1M'
           } > system-images/README.txt
           ls -lh system-images || true
           sha256sum system-images/*.img 2>/dev/null || true
@@ -314,10 +281,6 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      # The three images outside the dynamic partitions, as a separate small
-      # artifact: iterating on the boot flow should not require downloading the
-      # 1.6 GB ROM zip. Keep the name distinct from lineage-* because
-      # publish-artifact.yml mirrors the ROM artifact by that prefix.
       - name: Upload boot images
         if: always()
         uses: actions/upload-artifact@v4
