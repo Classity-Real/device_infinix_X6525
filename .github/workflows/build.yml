@@ -6,7 +6,6 @@ on:
     branches: [ main ]
     paths-ignore:
       - '**.md'
-      # Workflow-only changes must not trigger a full ROM build.
       - '.github/workflows/**'
 
 concurrency:
@@ -32,20 +31,22 @@ jobs:
           ref: 6b85cb322793ab3c9f4a67889ce95ef30d34088a
           path: lineage/vendor/infinix/X6525
 
-      # AOSP rejects VINTF XML in PRODUCT_COPY_FILES. Seuj09 never generates
-      # those entries; strip them from the generated vendor makefile here so
-      # DEVICE_MANIFEST_FILE remains the only consumer of the manifests.
-      - name: Strip VINTF from vendor PRODUCT_COPY_FILES
+      - name: Sanitize vendor PRODUCT_COPY_FILES
         run: |
           mk=lineage/vendor/infinix/X6525/X6525-vendor.mk
-          grep -c '/vintf/' "$mk" || true
+          echo "Before: vintf=$(grep -c '/vintf/' "$mk" || true) apk=$(grep -c '\.apk:' "$mk" || true)"
+          # AOSP forbids VINTF metadata and prebuilt APKs in PRODUCT_COPY_FILES
+          # (use DEVICE_MANIFEST_FILE / BUILD_PREBUILT instead). Seuj09 never
+          # generates these entries; strip them so kati can proceed.
           sed -i '/\/vintf\//d' "$mk"
+          sed -i '/\.apk:/d' "$mk"
           sed -i '/^[[:space:]]*\\[[:space:]]*$/d' "$mk"
-          if grep -q '/vintf/' "$mk"; then
-            echo "ERROR: vintf paths still present in $mk" >&2
+          if grep -qE '/vintf/|\.apk:' "$mk"; then
+            echo "ERROR: forbidden PRODUCT_COPY_FILES entries still present" >&2
+            grep -E '/vintf/|\.apk:' "$mk" || true
             exit 1
           fi
-          echo "VINTF PRODUCT_COPY_FILES entries removed from vendor makefile"
+          echo "Sanitized vendor makefile"
           head -8 "$mk"
 
       - name: Set up ccache volume
