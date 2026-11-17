@@ -92,20 +92,14 @@ PRODUCT_PACKAGES += \
 # The stock vendor tree provides its own AIDL Power HAL: the
 # vendor.unisoc.hardware.power-service binary, its init.rc, and a VINTF
 # manifest fragment declaring android.hardware.power IPower/default@3
-# (exactly what FCM level 7 requires). It was not previously reaching the
-# build because vendor/infinix/X6525/X6525-vendor.mk -- the generated
-# PRODUCT_COPY_FILES list for all proprietary-files.txt blobs -- was
-# truncated to 2 entries; that's fixed separately in the vendor repo
-# (regenerated from proprietary-files.txt). Do not package a generic
-# framework Power HAL here; it would conflict with the vendor's own.
+# (exactly what FCM level 7 requires). Do not package a generic framework
+# Power HAL here; it would conflict with the vendor's own.
 #
-# No vendor Thermal HAL blob exists in this device tree at all. FCM level 7
-# requires android.hardware.thermal@2.0::IThermal/default, so package AOSP's
-# generic implementation (hardware/interfaces/thermal/2.0/default, plain
-# framework source, not a vendor blob) for bring-up until/unless the vendor
-# ships a real one.
+# No vendor Thermal HAL blob exists. FCM level 7 requires
+# android.hardware.thermal@2.0::IThermal/default. AOSP only ships the mock
+# service under this name (not android.hardware.thermal@2.0-service).
 PRODUCT_PACKAGES += \
-    android.hardware.thermal@2.0-service
+    android.hardware.thermal@2.0-service.mock
 
 # First- and second-stage fstab. Named after ro.hardware, which the bootloader
 # reports as "X6525" on this device. Install to $(TARGET_COPY_OUT_VENDOR)/etc
